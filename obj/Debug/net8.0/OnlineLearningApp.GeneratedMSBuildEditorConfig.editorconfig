@@ -1,107 +1,112 @@
 is_global = true
 build_property.TargetFramework = net8.0
+build_property.TargetFrameworkIdentifier = .NETCoreApp
+build_property.TargetFrameworkVersion = v8.0
 build_property.TargetPlatformMinVersion = 
 build_property.UsingMicrosoftNETSdkWeb = true
 build_property.ProjectTypeGuids = 
 build_property.InvariantGlobalization = 
 build_property.PlatformNeutralAssembly = 
 build_property.EnforceExtendedAnalyzerRules = 
+build_property.EntryPointFilePath = 
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = OnlineLearningApp
 build_property.RootNamespace = OnlineLearningApp
-build_property.ProjectDir = C:\Users\USER\Desktop\TahirDoc\MGQSProjects\OnlineLearningApp\
+build_property.ProjectDir = C:\Users\TBA DATALYTICS\Desktop\MY_Projects\OnlineLearningApp\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.RazorLangVersion = 8.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = C:\Users\USER\Desktop\TahirDoc\MGQSProjects\OnlineLearningApp
+build_property.MSBuildProjectDirectory = C:\Users\TBA DATALYTICS\Desktop\MY_Projects\OnlineLearningApp
 build_property._RazorSourceGeneratorDebug = 
+build_property.EffectiveAnalysisLevelStyle = 8.0
+build_property.EnableCodeStyleSeverity = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/Account/AccessDenied.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/Account/AccessDenied.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxBY2Nlc3NEZW5pZWQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/Account/Index.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/Account/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/Account/Register.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/Account/Register.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxSZWdpc3Rlci5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/Account/SignIn.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/Account/SignIn.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxTaWduSW4uY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/Account/Users.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/Account/Users.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxVc2Vycy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/Course/Details.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/Course/Details.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ291cnNlXERldGFpbHMuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/Course/Index.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/Course/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ291cnNlXEluZGV4LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/Home/Index.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/Home/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/Home/Privacy.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/Home/Privacy.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/Module/Index.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/Module/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTW9kdWxlXEluZGV4LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/Option/Index.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/Option/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3B0aW9uXEluZGV4LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/Question/Index.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/Question/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUXVlc3Rpb25cSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/Quiz/Index.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/Quiz/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUXVpelxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/Shared/Components/ShoppingCartSummary/Default.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/Shared/Components/ShoppingCartSummary/Default.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXENvbXBvbmVudHNcU2hvcHBpbmdDYXJ0U3VtbWFyeVxEZWZhdWx0LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/Shared/Error.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/Shared/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/Shared/NotFound.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/Shared/NotFound.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXE5vdEZvdW5kLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/Shared/_CreateItem.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/Shared/_CreateItem.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9DcmVhdGVJdGVtLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/Shared/_Identity.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/Shared/_Identity.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9JZGVudGl0eS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/Shared/_ValidationScriptsPartial.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/Shared/_ValidationScriptsPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/_ViewImports.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/_ViewImports.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/_ViewStart.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/_ViewStart.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/USER/Desktop/TahirDoc/MGQSProjects/OnlineLearningApp/Views/Shared/_Layout.cshtml]
+[C:/Users/TBA DATALYTICS/Desktop/MY_Projects/OnlineLearningApp/Views/Shared/_Layout.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = b-lqpvc1kf66
