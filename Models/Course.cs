@@ -16,10 +16,12 @@ public class Course : IEntityBase
     public DateTime EndDate { get; set; }
     public decimal Price { get; set; }
     public string ImageURL { get; set; } = default!;
-    public CourseStatus Status { get; set; } /*= CourseStatus.Upcoming;*/
+    public CourseStatus Status { get; set; }
 
+    // Completion policy: every module must be completed and every checkpoint
+    // quiz must be passed at least once before the course is completed.
+    public bool RequireAllQuizzesPassed { get; set; } = true;
 
-    // Navigation properties
     public virtual ICollection<Module> Modules { get; set; } = new List<Module>();
     public virtual ICollection<StudentCourse> StudentCourses { get; set; } = new List<StudentCourse>();
     public string InstructorId { get; set; } = default!;
