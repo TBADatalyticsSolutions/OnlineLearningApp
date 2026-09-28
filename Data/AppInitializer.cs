@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using OnlineLearningApp.Models;
 
@@ -8,158 +8,320 @@ public class AppInitializer
 {
     public static void Initialize(IServiceProvider serviceProvider)
     {
-        using (var context = new OnlineLearningAppDbContext(
-            serviceProvider.GetRequiredService<DbContextOptions<OnlineLearningAppDbContext>>()))
+        using var context = new OnlineLearningAppDbContext(
+            serviceProvider.GetRequiredService<DbContextOptions<OnlineLearningAppDbContext>>());
+
+        SeedAccounts(context);
+        SeedModernCourseCatalog(context);
+    }
+
+    private static void SeedAccounts(OnlineLearningAppDbContext context)
+    {
+        var hasher = new PasswordHasher<Account>();
+
+        var admin = context.Accounts.FirstOrDefault(a => a.UserName == "admin");
+        if (admin is null)
         {
-            if (context.Accounts.Any())
+            admin = new Account
             {
-                return;   // DB has been seeded
-            }
-
-            // Seed Accounts
-            var hasher = new PasswordHasher<Account>();
-
-            var accounts = new Account[]
-          {
-                new Account
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    UserName = "admin",
-                    PasswordHash = hasher.HashPassword(null, "admin123"),
-                    FullName = "Administrator",
-                    Email = "admin@example.com",
-                    Role = UserRoles.Admin
-                },
-                new Account
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    UserName = "Instructor1",
-                    PasswordHash = hasher.HashPassword(null, "instructor123"),
-                    FullName = "Instructor One",
-                    Email = "instructor1@example.com",
-                    Role = UserRoles.Instructor
-                },
-                new Account
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    UserName = "student1",
-                    PasswordHash = hasher.HashPassword(null, "student123"),
-                    FullName = "Student One",
-                    Email = "student1@example.com",
-                    Role = UserRoles.Student
-                }
-          };
-            foreach (var account in accounts)
-            {
-                context.Accounts.Add(account);
-            }
-            context.SaveChanges();
-
-            // Seed Courses
-            var courses = new Course[]
-            {
-                new Course { CourseName = "Data Science 101", Description = "Introduction to Data Science", StartDate = DateTime.Now, EndDate = DateTime.Now.AddMonths(3), Price = 500m, Category = CourseCategory.DataScience, ImageURL = "datascience101.jpg", InstructorId = accounts[1].Id },
-                new Course { CourseName = "AI Fundamentals", Description = "Basics of AI", StartDate = DateTime.Now, EndDate = DateTime.Now.AddMonths(3), Price = 700m, Category = CourseCategory.AI, ImageURL = "aifundamentals.jpg", InstructorId = accounts[1].Id },
-                new Course { CourseName = "Programming with Python", Description = "Learn Python from scratch", StartDate = DateTime.Now, EndDate = DateTime.Now.AddMonths(2), Price = 400m, Category = CourseCategory.Programming, ImageURL = "pythonprogramming.jpg", InstructorId = accounts[1].Id },
-                new Course { CourseName = "Machine Learning Basics", Description = "Introduction to Machine Learning", StartDate = DateTime.Now, EndDate = DateTime.Now.AddMonths(4), Price = 600m, Category = CourseCategory.MachineLearning, ImageURL = "mlbasics.jpg", InstructorId = accounts[1].Id },
-                new Course { CourseName = "Advanced Data Science", Description = "Advanced topics in Data Science", StartDate = DateTime.Now, EndDate = DateTime.Now.AddMonths(5), Price = 800m, Category = CourseCategory.DataScience, ImageURL = "advanced_datascience.jpg", InstructorId = accounts[1].Id }
+                Id = Guid.NewGuid().ToString(),
+                UserName = "admin",
+                FullName = "Administrator",
+                Email = "admin@example.com",
+                Role = UserRoles.Admin
             };
-            foreach (var course in courses)
+            admin.PasswordHash = hasher.HashPassword(admin, "admin123");
+            context.Accounts.Add(admin);
+        }
+
+        var instructor = context.Accounts.FirstOrDefault(a => a.UserName == "Instructor1");
+        if (instructor is null)
+        {
+            instructor = new Account
             {
+                Id = Guid.NewGuid().ToString(),
+                UserName = "Instructor1",
+                FullName = "Lead Instructor",
+                Email = "instructor1@example.com",
+                Role = UserRoles.Instructor
+            };
+            instructor.PasswordHash = hasher.HashPassword(instructor, "instructor123");
+            context.Accounts.Add(instructor);
+        }
+
+        var student = context.Accounts.FirstOrDefault(a => a.UserName == "student1");
+        if (student is null)
+        {
+            student = new Account
+            {
+                Id = Guid.NewGuid().ToString(),
+                UserName = "student1",
+                FullName = "Demo Student",
+                Email = "student1@example.com",
+                Role = UserRoles.Student
+            };
+            student.PasswordHash = hasher.HashPassword(student, "student123");
+            context.Accounts.Add(student);
+        }
+
+        context.SaveChanges();
+    }
+
+    private static void SeedModernCourseCatalog(OnlineLearningAppDbContext context)
+    {
+        var instructor = context.Accounts.FirstOrDefault(a => a.Role == UserRoles.Instructor);
+        if (instructor is null)
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+
+        var catalog = new[]
+        {
+            new CourseSeed(
+                "Generative AI & AI Agents with Python",
+                "Build practical generative AI applications and autonomous AI agents with Python, APIs, tools, structured outputs, evaluation, and production patterns.",
+                CourseCategory.AI,
+                75000m,
+                14,
+                "generative-ai-python.jpg",
+                new[]
+                {
+                    ("Python Foundations for GenAI", "Refresh the Python patterns used in modern AI applications, including functions, classes, typing, environments, packages, and API clients."),
+                    ("LLMs, Tools & AI Agents", "Understand prompts, structured outputs, tool calling, agent loops, memory, retrieval, and reliable multi-step workflows."),
+                    ("Build & Evaluate an AI Agent", "Create a practical agent project, add guardrails and evaluation, and prepare it for deployment.")
+                }),
+            new CourseSeed(
+                "Prompt Engineering, RAG & Multimodal AI",
+                "Learn modern prompting, retrieval-augmented generation, embeddings, document workflows, vision, and multimodal application design.",
+                CourseCategory.NaturalLanguageProcessing,
+                65000m,
+                12,
+                "prompt-rag-multimodal.jpg",
+                new[]
+                {
+                    ("Prompt Engineering Essentials", "Design clear prompts, structured outputs, reusable templates, few-shot examples, and evaluation criteria."),
+                    ("RAG & Knowledge Systems", "Build retrieval pipelines with chunking, embeddings, vector search, citations, and grounded responses."),
+                    ("Multimodal AI Applications", "Work with text, images, documents, and mixed inputs to design useful multimodal AI workflows.")
+                }),
+            new CourseSeed(
+                "Python for Data Science & AI",
+                "Master Python for data analysis, visualization, automation, and the foundations required for machine learning and AI.",
+                CourseCategory.DataScience,
+                55000m,
+                12,
+                "python-data-science.jpg",
+                new[]
+                {
+                    ("Python Programming for Data Work", "Learn Python syntax, collections, functions, files, modules, exceptions, and reusable data-processing code."),
+                    ("NumPy, Pandas & Visualization", "Clean, transform, explore, and visualize real-world datasets with the core Python data stack."),
+                    ("Data Projects for AI Readiness", "Build an end-to-end data project covering preparation, exploratory analysis, feature creation, and reporting.")
+                }),
+            new CourseSeed(
+                "Machine Learning with Python",
+                "Develop practical machine learning skills from data preparation through model training, evaluation, interpretation, and deployment.",
+                CourseCategory.MachineLearning,
+                65000m,
+                14,
+                "machine-learning-python.jpg",
+                new[]
+                {
+                    ("ML Foundations & Data Preparation", "Understand supervised learning, features, targets, train-test splits, preprocessing, and leakage prevention."),
+                    ("Models, Tuning & Evaluation", "Train regression and classification models, tune hyperparameters, compare metrics, and interpret results."),
+                    ("End-to-End ML Project", "Build a complete machine learning solution with a reproducible pipeline and deployment-ready structure.")
+                }),
+            new CourseSeed(
+                "Cybersecurity Fundamentals & AI Security",
+                "Learn cybersecurity foundations, secure development, identity, common threats, and emerging security concerns around AI systems.",
+                CourseCategory.CyberSecurity,
+                60000m,
+                12,
+                "cybersecurity-ai.jpg",
+                new[]
+                {
+                    ("Cybersecurity Foundations", "Explore security principles, threat models, authentication, authorization, encryption, and security operations."),
+                    ("Secure Applications & APIs", "Identify common web and API risks and apply practical secure coding, validation, secrets, and access-control practices."),
+                    ("AI Security & Responsible AI", "Study prompt injection, data leakage, model abuse, AI supply-chain risks, monitoring, and defensive design.")
+                }),
+            new CourseSeed(
+                "Cloud Computing & DevOps Foundations",
+                "Learn cloud architecture, containers, CI/CD, observability, infrastructure concepts, and deployment practices for modern applications.",
+                CourseCategory.CloudComputing,
+                60000m,
+                12,
+                "cloud-devops.jpg",
+                new[]
+                {
+                    ("Cloud & Container Foundations", "Understand cloud services, networking basics, containers, images, environment configuration, and scalable application design."),
+                    ("CI/CD & Deployment", "Build automated pipelines for testing, packaging, deployment, environment management, and release workflows."),
+                    ("Observability & Reliability", "Apply logging, metrics, health checks, monitoring, rollback strategies, and practical reliability patterns.")
+                }),
+            new CourseSeed(
+                "Data Engineering for Modern AI",
+                "Build reliable data pipelines and platforms that support analytics, machine learning, and AI applications.",
+                CourseCategory.BigData,
+                70000m,
+                14,
+                "data-engineering-ai.jpg",
+                new[]
+                {
+                    ("Data Pipelines & ETL", "Design robust ingestion, transformation, validation, scheduling, and data-quality workflows."),
+                    ("Warehouses, Lakes & Analytics", "Understand modern storage patterns, dimensional modeling, SQL analytics, and scalable data architecture."),
+                    ("Data Platforms for AI", "Prepare datasets and pipelines for machine learning and generative AI while considering governance and lineage.")
+                }),
+            new CourseSeed(
+                "Full-Stack Web Development with Python & React",
+                "Build modern web applications with Python backends, APIs, React frontends, databases, authentication, testing, and deployment.",
+                CourseCategory.WebDevelopment,
+                75000m,
+                16,
+                "python-react-fullstack.jpg",
+                new[]
+                {
+                    ("Python APIs & Database Applications", "Build maintainable backend services, REST APIs, database models, validation, authentication, and business logic."),
+                    ("React Frontend Engineering", "Create responsive interfaces with components, state, forms, API integration, and reusable UI patterns."),
+                    ("Production Full-Stack Project", "Connect frontend and backend systems, add security and testing, and prepare the application for deployment.")
+                }),
+            new CourseSeed(
+                "Git, GitHub & AI-Assisted Software Development",
+                "Learn professional Git workflows, collaboration, code review, CI practices, and responsible use of AI coding assistants.",
+                CourseCategory.Programming,
+                45000m,
+                8,
+                "git-github-ai-development.jpg",
+                new[]
+                {
+                    ("Git & GitHub Essentials", "Master repositories, branches, commits, merges, pull requests, issues, and recovery workflows."),
+                    ("Team Collaboration & CI", "Use reviews, protected branches, automated checks, release practices, and maintainable repository conventions."),
+                    ("AI-Assisted Development", "Use AI coding tools for planning, implementation, testing, debugging, and documentation while maintaining developer control.")
+                }),
+            new CourseSeed(
+                "Python Coding for Kids: Creative Programming",
+                "A fun, project-based introduction to Python where young learners build games, stories, drawings, quizzes, and simple interactive programs.",
+                CourseCategory.Programming,
+                30000m,
+                8,
+                "python-coding-kids.jpg",
+                new[]
+                {
+                    ("Python Adventures", "Learn variables, input, conditions, loops, and functions through playful mini-projects and challenges."),
+                    ("Games, Stories & Creative Code", "Build text adventures, quizzes, simple games, and creative programs while learning problem-solving."),
+                    ("Young Developer Project", "Plan, build, test, and present a final Python project using the skills developed throughout the course.")
+                })
+        };
+
+        foreach (var item in catalog)
+        {
+            var course = context.Courses.FirstOrDefault(c => c.CourseName == item.Name);
+
+            if (course is null)
+            {
+                course = new Course
+                {
+                    CourseName = item.Name,
+                    Description = item.Description,
+                    Category = item.Category,
+                    StartDate = now,
+                    EndDate = now.AddDays(item.DurationWeeks * 7),
+                    Price = item.Price,
+                    ImageURL = item.ImageUrl,
+                    InstructorId = instructor.Id
+                };
+
                 context.Courses.Add(course);
-            }
-            context.SaveChanges();
+                context.SaveChanges();
 
-            // Seed Modules
-            var modules = new Module[]
-            {
-                new Module { ModuleName = "Introduction to Data Science", Content = "Content for Introduction to Data Science", CourseId = courses[0].CourseId },
-                new Module { ModuleName = "Data Science Tools", Content = "Content for Data Science Tools", CourseId = courses[0].CourseId },
-                new Module { ModuleName = "Introduction to AI", Content = "Content for Introduction to AI", CourseId = courses[1].CourseId },
-                new Module { ModuleName = "AI Techniques", Content = "Content for AI Techniques", CourseId = courses[1].CourseId },
-                new Module { ModuleName = "Getting Started with Python", Content = "Content for Getting Started with Python", CourseId = courses[2].CourseId },
-                new Module { ModuleName = "Python Advanced Topics", Content = "Content for Python Advanced Topics", CourseId = courses[2].CourseId },
-                new Module { ModuleName = "Basics of Machine Learning", Content = "Content for Basics of Machine Learning", CourseId = courses[3].CourseId },
-                new Module { ModuleName = "Machine Learning Algorithms", Content = "Content for Machine Learning Algorithms", CourseId = courses[3].CourseId },
-                new Module { ModuleName = "Advanced Data Science Techniques", Content = "Content for Advanced Data Science Techniques", CourseId = courses[4].CourseId },
-                new Module { ModuleName = "Data Science Case Studies", Content = "Content for Data Science Case Studies", CourseId = courses[4].CourseId }
-            };
-            foreach (var module in modules)
-            {
-                context.Modules.Add(module);
+                // CourseId is a legacy duplicate key retained for compatibility with older code.
+                course.CourseId = course.Id;
+                context.SaveChanges();
             }
-            context.SaveChanges();
 
-            // Seed Quizzes
-            var quizzes = new Quiz[]
-            {
-                new Quiz { QuizName = "Data Science Basics Quiz", Description = "Quiz on Data Science Basics", DateCreated = DateTime.Now, ModuleId = modules[0].ModuleId },
-                new Quiz { QuizName = "AI Basics Quiz", Description = "Quiz on AI Basics", DateCreated = DateTime.Now, ModuleId = modules[2].ModuleId }
-            };
-            foreach (var quiz in quizzes)
-            {
-                context.Quizzes.Add(quiz);
-            }
-            context.SaveChanges();
-
-            // Seed Questions
-            var questions = new Question[]
-            {
-                new Question { QuestionText = "What is Data Science?", QuestionType = "Multiple Choice", QuizId = quizzes[0].QuizId },
-                new Question { QuestionText = "What is AI?", QuestionType = "Multiple Choice", QuizId = quizzes[1].QuizId }
-            };
-            foreach (var question in questions)
-            {
-                context.Questions.Add(question);
-            }
-            context.SaveChanges();
-
-            // Seed Options
-            var options = new Option[]
-            {
-                new Option { OptionText = "A field of study", IsCorrect = true, QuestionId = questions[0].QuestionId },
-                new Option { OptionText = "A field of study", IsCorrect = true, QuestionId = questions[1].QuestionId }
-            };
-            foreach (var option in options)
-            {
-                context.Options.Add(option);
-            }
-            context.SaveChanges();
-
-            // Seed Orders
-            var orders = new Order[]
-            {
-                new Order { AccountId = accounts[2].Id, Email = accounts[2].Email, OrderDate = DateTime.Now, TotalAmount = 1200m }
-            };
-            foreach (var order in orders)
-            {
-                context.Orders.Add(order);
-            }
-            context.SaveChanges();
-
-            // Seed OrderItems
-            var orderItems = new OrderItem[]
-            {
-                new OrderItem { OrderId = orders[0].Id, CourseId = courses[0].CourseId, Quantity = 1, Price = courses[0].Price },
-                new OrderItem { OrderId = orders[0].Id, CourseId = courses[1].CourseId, Quantity = 1, Price = courses[1].Price }
-            };
-            foreach (var orderItem in orderItems)
-            {
-                context.OrderItems.Add(orderItem);
-            }
-            context.SaveChanges();
-
-            // Seed ShoppingCartItems
-            var shoppingCartItems = new ShoppingCartItem[]
-            {
-                new ShoppingCartItem { ShoppingCartId = Guid.NewGuid().ToString(), Course = courses[0], Amount = 1 },
-                new ShoppingCartItem { ShoppingCartId = Guid.NewGuid().ToString(), Course = courses[1], Amount = 1 }
-            };
-            foreach (var shoppingCartItem in shoppingCartItems)
-            {
-                context.ShoppingCartItems.Add(shoppingCartItem);
-            }
-            context.SaveChanges();
+            SeedModulesAndQuiz(context, course, item.Modules);
         }
     }
+
+    private static void SeedModulesAndQuiz(
+        OnlineLearningAppDbContext context,
+        Course course,
+        (string Name, string Content)[] moduleSeeds)
+    {
+        foreach (var moduleSeed in moduleSeeds)
+        {
+            var module = context.Modules.FirstOrDefault(
+                m => m.CourseId == course.Id && m.ModuleName == moduleSeed.Name);
+
+            if (module is null)
+            {
+                module = new Module
+                {
+                    ModuleName = moduleSeed.Name,
+                    Content = moduleSeed.Content,
+                    CourseId = course.Id
+                };
+
+                context.Modules.Add(module);
+                context.SaveChanges();
+            }
+
+            var quizName = $"{moduleSeed.Name} Checkpoint";
+            var quiz = context.Quizzes.FirstOrDefault(
+                q => q.ModuleId == module.ModuleId && q.QuizName == quizName);
+
+            if (quiz is null)
+            {
+                quiz = new Quiz
+                {
+                    QuizName = quizName,
+                    Description = $"Checkpoint assessment for {moduleSeed.Name}.",
+                    DateCreated = DateTime.UtcNow,
+                    ModuleId = module.ModuleId
+                };
+
+                context.Quizzes.Add(quiz);
+                context.SaveChanges();
+
+                var question = new Question
+                {
+                    QuestionText = $"Which outcome is central to the {moduleSeed.Name} module?",
+                    QuestionType = "Multiple Choice",
+                    QuizId = quiz.QuizId
+                };
+
+                context.Questions.Add(question);
+                context.SaveChanges();
+
+                context.Options.AddRange(
+                    new Option
+                    {
+                        OptionText = "Applying the module concepts in a practical project",
+                        IsCorrect = true,
+                        QuestionId = question.QuestionId
+                    },
+                    new Option
+                    {
+                        OptionText = "Skipping practice and evaluation",
+                        IsCorrect = false,
+                        QuestionId = question.QuestionId
+                    },
+                    new Option
+                    {
+                        OptionText = "Avoiding real-world examples",
+                        IsCorrect = false,
+                        QuestionId = question.QuestionId
+                    });
+
+                context.SaveChanges();
+            }
+        }
+    }
+
+    private sealed record CourseSeed(
+        string Name,
+        string Description,
+        CourseCategory Category,
+        decimal Price,
+        int DurationWeeks,
+        string ImageUrl,
+        (string Name, string Content)[] Modules);
 }
