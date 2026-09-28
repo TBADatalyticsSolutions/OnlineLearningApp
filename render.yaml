@@ -12,7 +12,7 @@ services:
         value: Production
       - key: PORT
         value: "10000"
-      - key: DefaultConnection
+      - key: ConnectionStrings__DefaultConnection
         sync: false
       - key: REDIS_URL
         fromService:
