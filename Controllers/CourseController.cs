@@ -1,6 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using OnlineLearningApp.Data;
+using OnlineLearningApp.Models;
+using System.Security.Claims;
 
 namespace OnlineLearningApp.Controllers;
 
@@ -8,10 +12,12 @@ namespace OnlineLearningApp.Controllers;
 public class CourseController : Controller
 {
     private readonly ICourseService _service;
+    private readonly OnlineLearningAppDbContext _context;
 
-    public CourseController(ICourseService service)
+    public CourseController(ICourseService service, OnlineLearningAppDbContext context)
     {
         _service = service;
+        _context = context;
     }
 
     [AllowAnonymous]
@@ -41,20 +47,112 @@ public class CourseController : Controller
         return View("Index", allCourses);
     }
 
-    // GET: Courses/Details/1
     [AllowAnonymous]
     public async Task<IActionResult> Details(int id)
     {
-        var courseDetail = await _service.GetCourseByIdAsync(id);
-        if (courseDetail == null)
+        var course = await _context.Courses
+            .AsNoTracking()
+            .Include(c => c.Instructor)
+            .Include(c => c.Modules)
+                .ThenInclude(m => m.Quizzes)
+            .FirstOrDefaultAsync(c => c.Id == id);
+
+        if (course == null)
         {
             return View("NotFound");
         }
 
-        return View(courseDetail);
+        var isEnrolled = false;
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!string.IsNullOrWhiteSpace(studentId))
+            {
+                isEnrolled = await _context.StudentCourses
+                    .AnyAsync(sc => sc.StudentId == studentId && sc.CourseId == course.Id);
+            }
+        }
+
+        ViewBag.IsEnrolled = isEnrolled;
+        return View(course);
     }
 
-    // GET: Courses/Create
+    [Authorize(Roles = UserRoles.Student)]
+    public async Task<IActionResult> Learn(int id)
+    {
+        var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(studentId))
+        {
+            return Challenge();
+        }
+
+        var enrolled = await _context.StudentCourses
+            .AnyAsync(sc => sc.StudentId == studentId && sc.CourseId == id);
+
+        if (!enrolled)
+        {
+            TempData["Error"] = "Please enroll in this course before starting the lessons.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var course = await _context.Courses
+            .AsNoTracking()
+            .Include(c => c.Instructor)
+            .Include(c => c.Modules.OrderBy(m => m.ModuleId))
+                .ThenInclude(m => m.Quizzes)
+            .FirstOrDefaultAsync(c => c.Id == id);
+
+        if (course == null)
+        {
+            return View("NotFound");
+        }
+
+        return View(course);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = UserRoles.Student)]
+    public async Task<IActionResult> Enroll(int id)
+    {
+        var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(studentId))
+        {
+            return Challenge();
+        }
+
+        var course = await _context.Courses
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == id);
+
+        if (course == null)
+        {
+            return View("NotFound");
+        }
+
+        var alreadyEnrolled = await _context.StudentCourses
+            .AnyAsync(sc => sc.StudentId == studentId && sc.CourseId == id);
+
+        if (!alreadyEnrolled)
+        {
+            _context.StudentCourses.Add(new StudentCourse
+            {
+                StudentId = studentId,
+                CourseId = id,
+                EnrollmentDate = DateTime.UtcNow
+            });
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = $"You are now enrolled in {course.CourseName}.";
+        }
+        else
+        {
+            TempData["Success"] = "You are already enrolled in this course.";
+        }
+
+        return RedirectToAction(nameof(Learn), new { id });
+    }
+
     [Authorize(Roles = UserRoles.Admin)]
     public async Task<IActionResult> Create()
     {
@@ -84,7 +182,6 @@ public class CourseController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // GET: Courses/Edit/1
     [Authorize(Roles = UserRoles.Admin)]
     public async Task<IActionResult> Edit(int id)
     {
