@@ -12,6 +12,10 @@ public class QuizAttemptViewModel
     public int Score { get; set; }
     public int TotalQuestions { get; set; }
     public bool Submitted { get; set; }
+    public int? LastScore { get; set; }
+    public int? LastTotalQuestions { get; set; }
+    public decimal? LastPercentage { get; set; }
+    public DateTime? AttemptedAt { get; set; }
 }
 
 public class QuizQuestionViewModel
