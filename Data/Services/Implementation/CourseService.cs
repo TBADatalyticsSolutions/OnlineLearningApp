@@ -34,13 +34,22 @@ public class CourseService : EntityBaseRepository<Course>, ICourseService
         // CourseId is a legacy duplicate key retained for compatibility with older code.
         newCourse.CourseId = newCourse.Id;
 
-        foreach (var moduleId in data.ModuleIds.Distinct())
+        var moduleIds = data.ModuleIds.Distinct().ToList();
+        if (moduleIds.Count > 0)
         {
-            _context.Courses_Modules.Add(new Course_Module
+            var validModuleIds = await _context.Modules
+                .Where(m => moduleIds.Contains(m.ModuleId))
+                .Select(m => m.ModuleId)
+                .ToListAsync();
+
+            foreach (var moduleId in validModuleIds)
             {
-                CourseId = newCourse.Id,
-                ModuleId = moduleId
-            });
+                _context.Courses_Modules.Add(new Course_Module
+                {
+                    CourseId = newCourse.Id,
+                    ModuleId = moduleId
+                });
+            }
         }
 
         await _context.SaveChangesAsync();
@@ -110,13 +119,22 @@ public class CourseService : EntityBaseRepository<Course>, ICourseService
 
         _context.Courses_Modules.RemoveRange(existingModules);
 
-        foreach (var moduleId in data.ModuleIds.Distinct())
+        var moduleIds = data.ModuleIds.Distinct().ToList();
+        if (moduleIds.Count > 0)
         {
-            _context.Courses_Modules.Add(new Course_Module
+            var validModuleIds = await _context.Modules
+                .Where(m => moduleIds.Contains(m.ModuleId))
+                .Select(m => m.ModuleId)
+                .ToListAsync();
+
+            foreach (var moduleId in validModuleIds)
             {
-                CourseId = data.Id,
-                ModuleId = moduleId
-            });
+                _context.Courses_Modules.Add(new Course_Module
+                {
+                    CourseId = data.Id,
+                    ModuleId = moduleId
+                });
+            }
         }
 
         await _context.SaveChangesAsync();
