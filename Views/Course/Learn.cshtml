@@ -39,6 +39,18 @@
         </div>
         <div class="col-xl-4">
             <aside class="learning-sidebar">
+                @if (isCourseCompleted)
+                {
+                    <div class="dashboard-card p-4 mb-3">
+                        <div class="eyebrow">Achievement unlocked</div>
+                        <h2 class="h5 fw-bold mt-2">Certificate of completion</h2>
+                        <p class="small text-muted-custom">Your certificate has been issued for this learning pathway.</p>
+                        <a asp-controller="Certificate" asp-action="View" asp-route-courseId="@Model.Id" class="btn btn-primary">
+                            <i class="bi bi-award me-1"></i> View certificate
+                        </a>
+                    </div>
+                }
+
                 <div class="dashboard-card p-4 mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-2"><strong>Course progress</strong><span class="small fw-bold text-primary">0%</span></div>
                     <div class="progress mb-3"><div class="progress-bar" style="width:0%"></div></div>
