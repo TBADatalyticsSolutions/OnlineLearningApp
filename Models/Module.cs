@@ -15,8 +15,4 @@ public class Module
         public virtual ICollection<Quiz> Quizzes { get; set; } = new List<Quiz>();
         public ICollection<Course_Module> Courses_Modules { get; set; } = new List<Course_Module>();
 
-    public static implicit operator int(Module v)
-    {
-        throw new NotImplementedException();
-    }
 }
