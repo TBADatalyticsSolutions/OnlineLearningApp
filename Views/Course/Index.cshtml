@@ -70,14 +70,14 @@
                 var initials = course.CourseName.Length >= 2 ? course.CourseName[..2].ToUpperInvariant() : course.CourseName.ToUpperInvariant();
                 var courseIcon = course.Category switch
                 {
-                    OnlineLearningApp.Data.CourseCategory.AI => "bi-stars",
-                    OnlineLearningApp.Data.CourseCategory.DataScience => "bi-bar-chart-line-fill",
-                    OnlineLearningApp.Data.CourseCategory.MachineLearning => "bi-cpu-fill",
-                    OnlineLearningApp.Data.CourseCategory.CyberSecurity => "bi-shield-lock-fill",
-                    OnlineLearningApp.Data.CourseCategory.CloudComputing => "bi-cloud-fill",
-                    OnlineLearningApp.Data.CourseCategory.BigData => "bi-database-fill",
-                    OnlineLearningApp.Data.CourseCategory.WebDevelopment => "bi-code-slash",
-                    OnlineLearningApp.Data.CourseCategory.Programming => "bi-terminal-fill",
+                    OnlineLearningApp.CourseCategory.AI => "bi-stars",
+                    OnlineLearningApp.CourseCategory.DataScience => "bi-bar-chart-line-fill",
+                    OnlineLearningApp.CourseCategory.MachineLearning => "bi-cpu-fill",
+                    OnlineLearningApp.CourseCategory.CyberSecurity => "bi-shield-lock-fill",
+                    OnlineLearningApp.CourseCategory.CloudComputing => "bi-cloud-fill",
+                    OnlineLearningApp.CourseCategory.BigData => "bi-database-fill",
+                    OnlineLearningApp.CourseCategory.WebDevelopment => "bi-code-slash",
+                    OnlineLearningApp.CourseCategory.Programming => "bi-terminal-fill",
                     _ => "bi-mortarboard-fill"
                 };
                 <div class="col">
