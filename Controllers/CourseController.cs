@@ -168,43 +168,24 @@ public class CourseController : Controller
                 CompletedAt = DateTime.UtcNow
             });
         }
-        else if (!progress.CompletedAt.HasValue)
+        else
         {
-            progress.CompletedAt = DateTime.UtcNow;
+            progress.CompletedAt ??= DateTime.UtcNow;
         }
 
         await _context.SaveChangesAsync();
 
-        var moduleCount = await _context.Modules.CountAsync(m => m.CourseId == courseId);
-        var completedCount = await _context.StudentModuleProgress
-            .Where(p => p.StudentId == studentId && p.CompletedAt != null)
-            .Join(
-                _context.Modules.Where(m => m.CourseId == courseId),
-                progressRow => progressRow.ModuleId,
-                module => module.ModuleId,
-                (_, _) => 1)
-            .CountAsync();
+        var completion = await _completionService.EvaluateAsync(studentId, courseId);
 
-        if (moduleCount > 0 && completedCount >= moduleCount)
+        if (completion.IsCompleted)
         {
-            enrollment.CompletedAt ??= DateTime.UtcNow;
-
-            var certificateExists = await _context.Certificates
-                .AnyAsync(c => c.StudentId == studentId && c.CourseId == courseId);
-
-            if (!certificateExists)
-            {
-                _context.Certificates.Add(new Certificate
-                {
-                    CertificateNumber = $"TBA-{DateTime.UtcNow:yyyy}-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}",
-                    StudentId = studentId,
-                    CourseId = courseId,
-                    IssuedAt = DateTime.UtcNow
-                });
-            }
-
-            await _context.SaveChangesAsync();
             TempData["Success"] = "Course completed. Your certificate is now available.";
+        }
+        else if (completion.ModulesCompleted)
+        {
+            TempData["Success"] = completion.QuizzesCompleted
+                ? "All course requirements are complete."
+                : "All modules are complete. Pass the required checkpoint assessments to unlock your certificate.";
         }
         else
         {
