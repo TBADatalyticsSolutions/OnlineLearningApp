@@ -275,6 +275,7 @@ public class AppInitializer
                     EndDate = now.AddDays(item.DurationWeeks * 7),
                     Price = item.Price,
                     ImageURL = item.ImageUrl,
+                    Status = now < now.AddDays(item.DurationWeeks * 7) ? CourseStatus.Ongoing : CourseStatus.Completed,
                     InstructorId = instructor.Id
                 };
 
@@ -324,6 +325,7 @@ public class AppInitializer
                     QuizName = quizName,
                     Description = $"Checkpoint assessment for {moduleSeed.Name}.",
                     DateCreated = DateTime.UtcNow,
+                    PassMark = 70m,
                     ModuleId = module.ModuleId
                 };
 
