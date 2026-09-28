@@ -41,6 +41,9 @@ public class NewCourseViewModel : IValidatableObject
     [Required]
     public CourseStatus Status { get; set; } = CourseStatus.Upcoming;
 
+    [Display(Name = "Require all checkpoint quizzes to be passed")]
+    public bool RequireAllQuizzesPassed { get; set; } = true;
+
     public List<User> Instructors { get; set; } = new();
     public List<string> Categories { get; set; } = new();
     public List<int> ModuleIds { get; set; } = new();
