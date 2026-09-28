@@ -38,6 +38,10 @@ public class OnlineLearningAppDbContext : IdentityDbContext<Account>
             .HasForeignKey(o => o.AccountId);
 
         modelBuilder.Entity<Course>()
+            .Property(c => c.RequireAllQuizzesPassed)
+            .HasDefaultValue(true);
+
+        modelBuilder.Entity<Course>()
             .HasOne(c => c.Instructor)
             .WithMany(a => a.Courses)
             .HasForeignKey(c => c.InstructorId)
