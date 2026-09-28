@@ -1,0 +1,56 @@
+@model IEnumerable<OnlineLearningApp.Models.Course>
+
+@{
+    ViewData["Title"] = "My Learning";
+}
+
+<div class="container py-4">
+    <div class="mb-4">
+        <span class="badge bg-success mb-2">Student area</span>
+        <h1 class="display-6 fw-bold">My Learning</h1>
+        <p class="text-secondary mb-0">Continue the courses you have enrolled in.</p>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body text-center p-5">
+                <i class="bi bi-journal-bookmark display-4 text-secondary"></i>
+                <h2 class="h4 fw-bold mt-3">No enrolled courses yet</h2>
+                <p class="text-secondary">Explore the catalog and enroll in a course to start learning.</p>
+                <a asp-controller="Course" asp-action="Index" class="btn btn-primary">
+                    Browse courses
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var course in Model)
+            {
+                <div class="col-md-6 col-xl-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+                        <div class="ratio ratio-16x9 bg-light">
+                            <img src="@course.ImageURL" alt="@course.CourseName"
+                                 class="w-100 h-100 object-fit-cover"
+                                 onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=&quot;d-flex align-items-center justify-content-center h-100 text-secondary&quot;><i class=&quot;bi bi-book display-4&quot;></i></div>';" />
+                        </div>
+                        <div class="card-body p-4 d-flex flex-column">
+                            <span class="badge bg-light text-dark border align-self-start mb-2">@course.Category</span>
+                            <h2 class="h5 fw-bold">@course.CourseName</h2>
+                            <p class="text-secondary small flex-grow-1">@course.Description</p>
+                            <div class="small text-muted mb-3">
+                                @course.Modules.Count module(s) · @course.Modules.Sum(m => m.Quizzes.Count) checkpoint(s)
+                            </div>
+                            <a asp-controller="Course" asp-action="Learn" asp-route-id="@course.Id"
+                               class="btn btn-primary">
+                                Continue learning <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
