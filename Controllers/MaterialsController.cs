@@ -101,11 +101,13 @@ public class MaterialsController : Controller
             }
         }
 
-        if (!string.IsNullOrWhiteSpace(model.ResourceUrl) &&
-            !Uri.TryCreate(model.ResourceUrl, UriKind.Absolute, out var uri) ||
-            uri is not null && uri.Scheme is not ("http" or "https"))
+        if (!string.IsNullOrWhiteSpace(model.ResourceUrl))
         {
-            ModelState.AddModelError(nameof(model.ResourceUrl), "Enter a valid HTTP or HTTPS URL.");
+            if (!Uri.TryCreate(model.ResourceUrl.Trim(), UriKind.Absolute, out var uri) ||
+                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            {
+                ModelState.AddModelError(nameof(model.ResourceUrl), "Enter a valid HTTP or HTTPS URL.");
+            }
         }
 
         if (!ModelState.IsValid)
