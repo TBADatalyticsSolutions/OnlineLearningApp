@@ -22,6 +22,7 @@ public class OnlineLearningAppDbContext : IdentityDbContext<Account>
     public DbSet<StudentModuleProgress> StudentModuleProgress { get; set; }
     public DbSet<QuizAttempt> QuizAttempts { get; set; }
     public DbSet<Certificate> Certificates { get; set; }
+    public DbSet<CourseMaterial> CourseMaterials { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -60,6 +61,18 @@ public class OnlineLearningAppDbContext : IdentityDbContext<Account>
         modelBuilder.Entity<OrderItem>()
             .HasOne(oi => oi.Order).WithMany(o => o.OrderItems)
             .HasForeignKey(oi => oi.OrderId);
+
+        modelBuilder.Entity<CourseMaterial>()
+            .HasOne(m => m.Module)
+            .WithMany(module => module.Materials)
+            .HasForeignKey(m => m.ModuleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<CourseMaterial>()
+            .HasOne(m => m.UploadedBy)
+            .WithMany()
+            .HasForeignKey(m => m.UploadedById)
+            .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Quiz>()
             .HasOne(q => q.Module).WithMany(m => m.Quizzes)
