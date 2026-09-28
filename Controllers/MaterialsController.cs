@@ -87,6 +87,11 @@ public class MaterialsController : Controller
             ModelState.AddModelError(string.Empty, "Provide an external resource URL or upload a file.");
         }
 
+        if (model.File is not null && !string.IsNullOrWhiteSpace(model.ResourceUrl))
+        {
+            ModelState.AddModelError(string.Empty, "Choose either an external resource URL or a file, not both.");
+        }
+
         if (model.File is not null)
         {
             var extension = Path.GetExtension(model.File.FileName);
