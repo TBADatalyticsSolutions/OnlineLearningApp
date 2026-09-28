@@ -8,10 +8,16 @@
                 <span class="badge bg-white text-primary mb-3">Checkpoint assessment</span>
                 <h1 class="h2 fw-bold">@Model.QuizName</h1>
                 <p class="mb-0" style="color:#d5e5f7;">@Model.Description</p>
-                <div class="small mt-3" style="color:#c4d7ee;"><i class="bi bi-list-check me-1"></i> @Model.TotalQuestions questions</div>
+                <div class="small mt-3" style="color:#c4d7ee;"><i class="bi bi-list-check me-1"></i> @Model.TotalQuestions questions · Pass mark: 70%</div>
             </div>
             @if (Model.Submitted) {
-                <div class="alert alert-success border-0 rounded-4 shadow-sm mb-4"><i class="bi bi-check-circle-fill me-2"></i><strong>Assessment submitted.</strong> You scored @Model.Score / @Model.TotalQuestions.</div>
+                var percentage = Model.TotalQuestions == 0 ? 0 : Math.Round(Model.Score * 100m / Model.TotalQuestions, 2);
+                var passed = percentage >= 70m;
+                <div class="alert @(passed ? "alert-success" : "alert-warning") border-0 rounded-4 shadow-sm mb-4">
+                    <i class="bi @(passed ? "bi-check-circle-fill" : "bi-exclamation-circle-fill") me-2"></i>
+                    <strong>Assessment submitted.</strong> You scored @Model.Score / @Model.TotalQuestions (@percentage%).
+                    <span class="ms-2">@(passed ? "Passed" : "Not passed yet")</span>
+                </div>
             }
             <form asp-action="Submit" method="post">
                 @Html.AntiForgeryToken()
