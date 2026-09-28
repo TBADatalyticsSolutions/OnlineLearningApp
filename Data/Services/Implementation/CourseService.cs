@@ -43,14 +43,14 @@ public class CourseService : EntityBaseRepository<Course>, ICourseService
         await _context.SaveChangesAsync();
     }
 
-    public async Task<Course> GetCourseByIdAsync(int id)
+    public async Task<Course?> GetCourseByIdAsync(int id)
     {
         var courseDetails = await _context.Courses
             .Include(i => i.Instructor)
             .Include(cm => cm.Courses_Modules).ThenInclude(m => m.Module)
             .FirstOrDefaultAsync(n => n.Id == id);
 
-        return courseDetails!;
+        return courseDetails;
     }
 
     public async Task<NewCourseDropdownViewModel> GetNewCourseDropdownsValues()
