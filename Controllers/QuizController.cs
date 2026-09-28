@@ -7,7 +7,6 @@ using System.Security.Claims;
 
 namespace OnlineLearningApp.Controllers;
 
-[Authorize(Roles = UserRoles.Student)]
 public class QuizController : Controller
 {
     private readonly OnlineLearningAppDbContext _context;
@@ -17,7 +16,7 @@ public class QuizController : Controller
         _context = context;
     }
 
-    [AllowAnonymous]
+    [Authorize(Roles = UserRoles.Admin + "," + UserRoles.Instructor)]
     public async Task<IActionResult> Index()
     {
         var allQuizzes = await _context.Quizzes
@@ -29,6 +28,7 @@ public class QuizController : Controller
         return View(allQuizzes);
     }
 
+    [Authorize(Roles = UserRoles.Student)]
     public async Task<IActionResult> Take(int id)
     {
         var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -79,6 +79,7 @@ public class QuizController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = UserRoles.Student)]
     public async Task<IActionResult> Submit(QuizAttemptViewModel model)
     {
         var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
