@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using OnlineLearningApp.Data;
+using OnlineLearningApp.Data.Services;
 using OnlineLearningApp.Models;
 using System.Security.Claims;
 
@@ -14,7 +15,7 @@ public class CourseController : Controller
     private readonly ICourseCompletionService _completionService;
     private readonly OnlineLearningAppDbContext _context;
 
-    public CourseController(ICourseService service, OnlineLearningAppDbContext context)
+    public CourseController(ICourseService service, ICourseCompletionService completionService, OnlineLearningAppDbContext context)
     {
         _service = service;
         _completionService = completionService;
