@@ -24,6 +24,7 @@ public class CourseService : EntityBaseRepository<Course>, ICourseService
             Category = data.Category,
             StartDate = data.StartDate,
             EndDate = data.EndDate,
+            Status = data.Status,
             InstructorId = data.InstructorId
         };
         await _context.Courses.AddAsync(newCourse);
@@ -96,6 +97,7 @@ public class CourseService : EntityBaseRepository<Course>, ICourseService
             dbCourse.Category = data.Category;
             dbCourse.StartDate = data.StartDate;
             dbCourse.EndDate = data.EndDate;
+            dbCourse.Status = data.Status;
             dbCourse.InstructorId = data.InstructorId;
             await _context.SaveChangesAsync();
         }
