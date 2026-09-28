@@ -1,61 +1,71 @@
-﻿@model OnlineLearningApp.Models.Course
-
+@model OnlineLearningApp.Models.Course
 @{
-    ViewData["Title"] = "Course Details";
+    ViewData["Title"] = Model.CourseName;
+    var isAuthenticated = User?.Identity?.IsAuthenticated == true;
+    var isStudent = isAuthenticated && User.IsInRole(UserRoles.Student);
+    var isAdmin = isAuthenticated && User.IsInRole(UserRoles.Admin);
+    var isEnrolled = ViewBag.IsEnrolled as bool? ?? false;
 }
+<div class="container-fluid px-3 px-lg-4 py-4 py-lg-5">
+    @if (TempData["Success"] is string success) { <div class="alert alert-success rounded-4">@success</div> }
+    @if (TempData["Error"] is string error) { <div class="alert alert-danger rounded-4">@error</div> }
 
-<h2>Course Details</h2>
+    <div class="course-hero mb-5">
+        <div class="row g-0 align-items-stretch">
+            <div class="col-xl-7 p-4 p-lg-5">
+                <a asp-action="Index" class="text-white text-decoration-none small"><i class="bi bi-arrow-left me-1"></i> Back to courses</a>
+                <div class="mt-4"><span class="badge bg-primary-subtle text-primary px-3 py-2">@Model.Category</span></div>
+                <h1 class="display-5 fw-bold mt-3 mb-3">@Model.CourseName</h1>
+                <p class="lead muted">@Model.Description</p>
+                <div class="d-flex flex-wrap gap-3 course-meta my-4">
+                    <span><i class="bi bi-calendar3 me-1"></i> @Model.StartDate.ToString("dd MMM yyyy")</span>
+                    <span><i class="bi bi-calendar-check me-1"></i> @Model.EndDate.ToString("dd MMM yyyy")</span>
+                    <span><i class="bi bi-person-circle me-1"></i> @(Model.Instructor?.FullName ?? "Expert instructor")</span>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    @if (isStudent && isEnrolled) {
+                        <a asp-action="Learn" asp-route-id="@Model.Id" class="btn btn-light btn-lg px-4"><i class="bi bi-play-fill me-1"></i> Continue learning</a>
+                    } else if (isStudent) {
+                        <form asp-action="Enroll" asp-route-id="@Model.Id" method="post">@Html.AntiForgeryToken()<button class="btn btn-primary btn-lg px-4" type="submit"><i class="bi bi-person-plus me-1"></i> Enroll now</button></form>
+                    } else if (!isAuthenticated) {
+                        <a asp-controller="Account" asp-action="SignIn" class="btn btn-light btn-lg px-4">Sign in to enroll</a>
+                    }
+                    @if (isAdmin) { <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-light btn-lg">Edit course</a> }
+                </div>
+            </div>
+            <div class="col-xl-5 course-cover">
+                <img src="@Model.ImageURL" alt="@Model.CourseName" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=&quot;d-flex h-100 align-items-center justify-content-center text-primary&quot;><i class=&quot;bi bi-mortarboard display-1&quot;></i></div>';" />
+            </div>
+        </div>
+    </div>
 
-<div>
-    <h4>Course</h4>
-    <hr />
-    <dl class="row">
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.CourseName)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.CourseName)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Description)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Description)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.StartDate)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.StartDate)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.EndDate)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.EndDate)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Category)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Category)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Status)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Status)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.ImageURL)
-        </dt>
-        <dd class="col-sm-10">
-            <img src="@Model.ImageURL" alt="@Model.CourseName" class="img-thumbnail" />
-        </dd>
-    </dl>
-</div>
-
-<div>
-    <a class="btn btn-primary" asp-action="Edit" asp-route-id="@Model.Id">Edit</a>
-    <a class="btn btn-secondary" asp-action="Index">Back to List</a>
+    <div class="row g-4">
+        <div class="col-xl-8">
+            <div class="surface p-4 p-lg-5">
+                <div class="eyebrow">Course curriculum</div>
+                <h2 class="section-title h3 mb-4">What you'll learn</h2>
+                <div class="row g-3">
+                    @foreach (var module in Model.Modules.OrderBy(m => m.ModuleId)) {
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-3 border h-100">
+                                <div class="small text-primary fw-bold mb-2">MODULE @module.ModuleId</div>
+                                <h3 class="h6 fw-bold">@module.ModuleName</h3>
+                                <p class="small text-muted-custom mb-2">@module.Content</p>
+                                <span class="small text-muted-custom"><i class="bi bi-ui-checks me-1"></i>@module.Quizzes.Count checkpoint</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="surface p-4 sticky-lg-top" style="top:92px;">
+                <div class="d-flex justify-content-between align-items-center mb-3"><span class="text-muted-custom">Course investment</span><strong class="fs-3 text-primary">₦@Model.Price.ToString("N0")</strong></div>
+                <div class="d-flex justify-content-between py-2 border-top"><span class="text-muted-custom">Modules</span><strong>@Model.Modules.Count</strong></div>
+                <div class="d-flex justify-content-between py-2 border-top"><span class="text-muted-custom">Checkpoints</span><strong>@Model.Modules.Sum(m => m.Quizzes.Count)</strong></div>
+                <div class="d-flex justify-content-between py-2 border-top"><span class="text-muted-custom">Format</span><strong>Online</strong></div>
+                <div class="mt-3 p-3 rounded-3" style="background:var(--brand-100);"><i class="bi bi-shield-check text-primary me-2"></i><small>Learn at your pace with structured modules and practical assessments.</small></div>
+            </div>
+        </div>
+    </div>
 </div>
