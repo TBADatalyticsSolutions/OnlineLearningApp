@@ -3,7 +3,7 @@ namespace OnlineLearningApp;
 
 public interface IQuizService
 {
-    Task<Quiz> GetQuizByIdAsync(int id);
+    Task<Quiz?> GetQuizByIdAsync(int id);
     Task<IEnumerable<Quiz>> GetAllQuizzesAsync();
     Task CreateQuizAsync(Quiz quiz);
     Task UpdateQuizAsync(Quiz quiz);
