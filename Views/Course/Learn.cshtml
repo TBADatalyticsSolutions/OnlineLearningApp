@@ -27,7 +27,7 @@
                         <div id="module-@module.ModuleId" class="collapse">
                             <div class="lesson-panel">
                                 <div class="eyebrow mb-2">Lesson content</div>
-                                <div class="lesson-content mb-4">@Html.Raw(module.Content)</div>
+                                <div class="lesson-content mb-4">@module.Content</div>
 
                                 @if (module.Materials.Any())
                                 {
