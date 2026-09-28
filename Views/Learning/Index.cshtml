@@ -1,56 +1,69 @@
 @model IEnumerable<OnlineLearningApp.Models.Course>
-
 @{
     ViewData["Title"] = "My Learning";
+    var courses = Model.ToList();
 }
-
-<div class="container py-4">
-    <div class="mb-4">
-        <span class="badge bg-success mb-2">Student area</span>
-        <h1 class="display-6 fw-bold">My Learning</h1>
-        <p class="text-secondary mb-0">Continue the courses you have enrolled in.</p>
-    </div>
-
-    @if (!Model.Any())
-    {
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body text-center p-5">
-                <i class="bi bi-journal-bookmark display-4 text-secondary"></i>
-                <h2 class="h4 fw-bold mt-3">No enrolled courses yet</h2>
-                <p class="text-secondary">Explore the catalog and enroll in a course to start learning.</p>
-                <a asp-controller="Course" asp-action="Index" class="btn btn-primary">
-                    Browse courses
-                </a>
+<div class="container-fluid px-3 px-lg-4 py-4 py-lg-5">
+    <div class="row g-4">
+        <div class="col-xl-8">
+            <div class="catalog-hero mb-4">
+                <div class="eyebrow" style="color:#7fc0ff;">Student workspace</div>
+                <h1 class="display-6 fw-bold mt-2">Welcome back, @User.Identity?.Name.</h1>
+                <p class="lead mb-0" style="color:#cfe1f7;">Keep building your skills. Your next milestone is one lesson away.</p>
             </div>
-        </div>
-    }
-    else
-    {
-        <div class="row g-4">
-            @foreach (var course in Model)
-            {
-                <div class="col-md-6 col-xl-4">
-                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-                        <div class="ratio ratio-16x9 bg-light">
-                            <img src="@course.ImageURL" alt="@course.CourseName"
-                                 class="w-100 h-100 object-fit-cover"
-                                 onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=&quot;d-flex align-items-center justify-content-center h-100 text-secondary&quot;><i class=&quot;bi bi-book display-4&quot;></i></div>';" />
-                        </div>
-                        <div class="card-body p-4 d-flex flex-column">
-                            <span class="badge bg-light text-dark border align-self-start mb-2">@course.Category</span>
-                            <h2 class="h5 fw-bold">@course.CourseName</h2>
-                            <p class="text-secondary small flex-grow-1">@course.Description</p>
-                            <div class="small text-muted mb-3">
-                                @course.Modules.Count module(s) · @course.Modules.Sum(m => m.Quizzes.Count) checkpoint(s)
+
+            <div class="d-flex justify-content-between align-items-end mb-3">
+                <div><div class="eyebrow">Your courses</div><h2 class="section-title h3 mb-0">Continue learning</h2></div>
+                <a asp-controller="Course" asp-action="Index" class="btn btn-soft btn-sm">Browse catalog</a>
+            </div>
+
+            @if (!courses.Any()) {
+                <div class="empty-state">
+                    <i class="bi bi-journal-bookmark display-4 text-primary"></i>
+                    <h2 class="h4 fw-bold mt-3">Your learning library is empty</h2>
+                    <p class="text-muted-custom">Choose a course and start building practical skills.</p>
+                    <a asp-controller="Course" asp-action="Index" class="btn btn-primary">Explore courses</a>
+                </div>
+            } else {
+                <div class="d-grid gap-3">
+                    @foreach (var course in courses) {
+                        <div class="dashboard-card p-3 p-lg-4">
+                            <div class="row align-items-center g-3">
+                                <div class="col-md-3">
+                                    <div class="ratio ratio-16x9 rounded-3 overflow-hidden bg-light">
+                                        <img src="@course.ImageURL" alt="@course.CourseName" class="w-100 h-100 object-fit-cover" onerror="this.style.display='none';" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="category-badge">@course.Category</span>
+                                    <h3 class="h5 fw-bold mt-2 mb-1">@course.CourseName</h3>
+                                    <p class="small text-muted-custom mb-2">@(course.Modules.Count) modules · @course.Modules.Sum(m => m.Quizzes.Count) checkpoints</p>
+                                    <div class="progress"><div class="progress-bar" style="width:0%"></div></div>
+                                    <small class="text-muted-custom">0% complete</small>
+                                </div>
+                                <div class="col-md-3 text-md-end">
+                                    <a asp-controller="Course" asp-action="Learn" asp-route-id="@course.Id" class="btn btn-primary">Continue <i class="bi bi-arrow-right ms-1"></i></a>
+                                </div>
                             </div>
-                            <a asp-controller="Course" asp-action="Learn" asp-route-id="@course.Id"
-                               class="btn btn-primary">
-                                Continue learning <i class="bi bi-arrow-right"></i>
-                            </a>
                         </div>
-                    </div>
+                    }
                 </div>
             }
         </div>
-    }
+        <div class="col-xl-4">
+            <div class="dashboard-card p-4 mb-3">
+                <div class="eyebrow">Learning overview</div>
+                <div class="row g-3 mt-1">
+                    <div class="col-6"><div class="surface stat-card h-100"><div class="stat-icon mb-2"><i class="bi bi-journal-bookmark"></i></div><strong class="fs-4">@courses.Count</strong><div class="small text-muted-custom">Enrolled</div></div></div>
+                    <div class="col-6"><div class="surface stat-card h-100"><div class="stat-icon mb-2"><i class="bi bi-check2-circle"></i></div><strong class="fs-4">0</strong><div class="small text-muted-custom">Completed</div></div></div>
+                </div>
+            </div>
+            <div class="dashboard-card p-4">
+                <div class="eyebrow">Why keep learning?</div>
+                <div class="d-flex gap-3 py-3 border-bottom"><div class="stat-icon flex-shrink-0"><i class="bi bi-lightning-charge"></i></div><div><strong>Practical skills</strong><div class="small text-muted-custom">Build knowledge you can apply.</div></div></div>
+                <div class="d-flex gap-3 py-3 border-bottom"><div class="stat-icon flex-shrink-0"><i class="bi bi-graph-up-arrow"></i></div><div><strong>Visible progress</strong><div class="small text-muted-custom">Track milestones as you learn.</div></div></div>
+                <div class="d-flex gap-3 pt-3"><div class="stat-icon flex-shrink-0"><i class="bi bi-award"></i></div><div><strong>Earn recognition</strong><div class="small text-muted-custom">Complete learning pathways.</div></div></div>
+            </div>
+        </div>
+    </div>
 </div>
