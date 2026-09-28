@@ -13,7 +13,7 @@ public class ModuleService : IModuleService
         _context = context;
     }
 
-    public async Task<Module> GetModuleByIdAsync(int id)
+    public async Task<Module?> GetModuleByIdAsync(int id)
     {
         return await _context.Modules.FindAsync(id);
     }
