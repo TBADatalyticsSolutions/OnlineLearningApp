@@ -327,6 +327,14 @@ public class AppInitializer
                 context.Modules.Add(module);
                 await context.SaveChangesAsync();
             }
+            else if (string.IsNullOrWhiteSpace(module.Content))
+            {
+                // Repair older catalog rows that were created before module content was seeded.
+                module.Content = moduleSeed.Content;
+                await context.SaveChangesAsync();
+            }
+
+            await SeedRecommendedMaterialAsync(context, module);
 
             var quizName = $"{moduleSeed.Name} Checkpoint";
             var quiz = await context.Quizzes.FirstOrDefaultAsync(
@@ -379,6 +387,73 @@ public class AppInitializer
                 await context.SaveChangesAsync();
             }
         }
+    }
+
+    private static async Task SeedRecommendedMaterialAsync(OnlineLearningAppDbContext context, Module module)
+    {
+        if (await context.CourseMaterials.AnyAsync(m => m.ModuleId == module.ModuleId))
+        {
+            return;
+        }
+
+        var (title, url, description) = GetRecommendedResource(module.ModuleName);
+        var adminId = await context.Accounts
+            .Where(a => a.Role == UserRoles.Admin)
+            .Select(a => a.Id)
+            .FirstOrDefaultAsync();
+
+        context.CourseMaterials.Add(new CourseMaterial
+        {
+            ModuleId = module.ModuleId,
+            Title = title,
+            ResourceUrl = url,
+            MaterialType = "Link",
+            Description = description,
+            UploadedById = string.IsNullOrWhiteSpace(adminId) ? null : adminId,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        await context.SaveChangesAsync();
+    }
+
+    private static (string Title, string Url, string Description) GetRecommendedResource(string moduleName)
+    {
+        var name = moduleName.ToLowerInvariant();
+
+        if (name.Contains("power bi") || name.Contains("analytics portfolio"))
+            return ("Microsoft Learn: Prepare and visualize data with Power BI", "https://learn.microsoft.com/en-us/training/paths/prepare-visualize-data-power-bi/", "Official Microsoft learning path covering data preparation, transformation and interactive Power BI reports.");
+
+        if (name.Contains("sql"))
+            return ("PostgreSQL SQL Tutorial", "https://www.postgresql.org/docs/current/tutorial-sql.html", "Official SQL tutorial covering tables, queries, joins, aggregates, updates and deletes.");
+
+        if (name.Contains("pandas") || name.Contains("data analysis") || name.Contains("data science"))
+            return ("pandas Getting Started", "https://pandas.pydata.org/docs/getting_started/", "Official pandas documentation for exploring, cleaning and transforming tabular data.");
+
+        if (name.Contains("machine learning") || name.StartsWith("ml ") || name.Contains("models") || name.Contains("evaluation"))
+            return ("scikit-learn User Guide", "https://scikit-learn.org/stable/user_guide/", "Official scikit-learn guide covering supervised and unsupervised learning, model selection and evaluation.");
+
+        if (name.Contains("cybersecurity") || name.Contains("secure") || name.Contains("security"))
+            return ("OWASP Top 10", "https://top10.owasp.org/2025/", "OWASP's 2025 awareness document for the most important web application security risks.");
+
+        if (name.Contains("cloud") || name.Contains("container"))
+            return ("Docker Get Started", "https://docs.docker.com/get-started/", "Official Docker learning material covering containers, images and basic workflows.");
+
+        if (name.Contains("ci/cd") || name.Contains("github") || name.Contains("team collaboration"))
+            return ("GitHub Actions Quickstart", "https://docs.github.com/en/actions/get-started/quickstart", "Official GitHub guide to workflows, automation, CI and deployment pipelines.");
+
+        if (name.Contains("react"))
+            return ("React Quick Start", "https://react.dev/learn", "Official React guide covering components, state, events, lists and everyday React concepts.");
+
+        if (name.Contains("api") || name.Contains("fastapi") || name.Contains("python"))
+            return ("Python Official Tutorial", "https://docs.python.org/3/tutorial/", "Official Python tutorial covering core language concepts and practical programming foundations.");
+
+        if (name.Contains("rag") || name.Contains("prompt") || name.Contains("multimodal") || name.Contains("generative ai") || name.Contains("agent"))
+            return ("Microsoft Learn: Generative AI and AI agents", "https://learn.microsoft.com/en-us/training/modules/fundamentals-generative-ai/", "Official Microsoft Learn material covering generative AI, large language models, prompts and AI agents.");
+
+        if (name.Contains("git"))
+            return ("GitHub Skills: Introduction to GitHub", "https://github.com/skills/introduction-to-github", "Hands-on GitHub Skills exercise covering repositories, branches, commits and pull requests.");
+
+        return ("Microsoft Learn", "https://learn.microsoft.com/training/", "Browse Microsoft's self-paced technical training library for additional study.");
     }
 
     private sealed record CourseSeed(
