@@ -1,0 +1,58 @@
+@model IEnumerable<OnlineLearningApp.Models.CourseMaterial>
+@{
+    ViewData["Title"] = "Learning Materials";
+}
+
+<div class="container-fluid px-3 px-lg-4 py-4 py-lg-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div>
+            <div class="eyebrow">Administration</div>
+            <h1 class="section-title h2 mb-1">Learning materials</h1>
+            <p class="text-muted-custom mb-0">Manage files and trusted external learning resources attached to modules.</p>
+        </div>
+    </div>
+
+    @if (TempData["Success"] is string success)
+    {
+        <div class="alert alert-success rounded-4">@success</div>
+    }
+
+    <div class="surface overflow-hidden">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead><tr><th>Material</th><th>Course / Module</th><th>Type</th><th>Added</th><th class="text-end">Action</th></tr></thead>
+                <tbody>
+                @foreach (var material in Model)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">@material.Title</div>
+                            <div class="small text-muted-custom">@material.Description</div>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">@material.Module.Course.CourseName</div>
+                            <div class="small text-muted-custom">@material.Module.ModuleName</div>
+                        </td>
+                        <td><span class="badge rounded-pill bg-primary-subtle text-primary">@material.MaterialType</span></td>
+                        <td class="small">@material.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
+                        <td class="text-end">
+                            <div class="d-inline-flex gap-2">
+                                <a asp-action="Open" asp-route-id="@material.Id" class="btn btn-sm btn-soft" target="_blank">Open</a>
+                                <form asp-action="Delete" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@material.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this material?');">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="5" class="text-center py-5 text-muted-custom">No materials have been added yet.</td></tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
