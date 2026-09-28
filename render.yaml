@@ -7,6 +7,10 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     autoDeploy: true
+    disk:
+      name: tba-online-learning-data
+      mountPath: /app/App_Data
+      sizeGB: 10
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
