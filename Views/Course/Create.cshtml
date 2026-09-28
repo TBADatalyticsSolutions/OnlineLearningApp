@@ -58,6 +58,13 @@
                             <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<OnlineLearningApp.Data.CourseStatus>()"></select>
                             <span asp-validation-for="Status" class="text-danger small"></span>
                         </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch p-3 rounded-3 border">
+                                <input asp-for="RequireAllQuizzesPassed" class="form-check-input" />
+                                <label asp-for="RequireAllQuizzesPassed" class="form-check-label fw-semibold"></label>
+                                <div class="small text-muted-custom">Require learners to pass every checkpoint assessment before the course can be completed and certified.</div>
+                            </div>
+                        </div>
                         <div class="col-md-6">
                             <label asp-for="ImageURL" class="form-label fw-semibold"></label>
                             <input asp-for="ImageURL" class="form-control" placeholder="/images/courses/course-cover.jpg" />
