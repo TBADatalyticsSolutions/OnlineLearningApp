@@ -5,7 +5,7 @@ using System.Security.Claims;
 
 namespace OnlineLearningApp.Controllers;
 
-[Authorize]
+[Authorize(Roles = UserRoles.Admin + "," + UserRoles.Student)]
 public class OrdersController : Controller
 {
     private readonly ICourseService _courseService;
@@ -23,6 +23,7 @@ public class OrdersController : Controller
     }
 
     [HttpGet]
+    [Authorize(Roles = UserRoles.Student)]
     public async Task<IActionResult> GetCartItemCount()
     {
         var items = await _shoppingCart.GetShoppingCartItemsAsync();
@@ -47,6 +48,7 @@ public class OrdersController : Controller
     }
 
     [HttpGet]
+    [Authorize(Roles = UserRoles.Student)]
     public async Task<IActionResult> ShoppingCart()
     {
         var items = await _shoppingCart.GetShoppingCartItemsAsync();
@@ -63,11 +65,12 @@ public class OrdersController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = UserRoles.Student)]
     public async Task<IActionResult> AddItemToShoppingCart(int id)
     {
         var item = await _courseService.GetCourseByIdAsync(id);
 
-        if (item == null)
+        if (item is null)
         {
             return NotFound();
         }
@@ -79,11 +82,12 @@ public class OrdersController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = UserRoles.Student)]
     public async Task<IActionResult> RemoveItemFromShoppingCart(int id)
     {
         var item = await _courseService.GetCourseByIdAsync(id);
 
-        if (item == null)
+        if (item is null)
         {
             return NotFound();
         }
@@ -95,6 +99,7 @@ public class OrdersController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = UserRoles.Student)]
     public async Task<IActionResult> CompleteOrder()
     {
         var items = await _shoppingCart.GetShoppingCartItemsAsync();
