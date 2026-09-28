@@ -29,6 +29,38 @@ public class QuizController : Controller
     }
 
     [Authorize(Roles = UserRoles.Student)]
+    [Authorize(Roles = UserRoles.Student)]
+    [HttpGet]
+    public async Task<IActionResult> History()
+    {
+        var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(studentId))
+        {
+            return Challenge();
+        }
+
+        var attempts = await _context.QuizAttempts
+            .AsNoTracking()
+            .Where(a => a.StudentId == studentId)
+            .Include(a => a.Quiz)
+                .ThenInclude(q => q.Module)
+                    .ThenInclude(m => m.Course)
+            .OrderByDescending(a => a.AttemptedAt)
+            .Select(a => new QuizHistoryItemViewModel
+            {
+                QuizName = a.Quiz.QuizName,
+                CourseName = a.Quiz.Module.Course.CourseName,
+                Score = a.Score,
+                TotalQuestions = a.TotalQuestions,
+                Percentage = a.Percentage,
+                Passed = a.Passed,
+                AttemptedAt = a.AttemptedAt
+            })
+            .ToListAsync();
+
+        return View(new QuizHistoryViewModel { Attempts = attempts });
+    }
+
     public async Task<IActionResult> Take(int id)
     {
         var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
