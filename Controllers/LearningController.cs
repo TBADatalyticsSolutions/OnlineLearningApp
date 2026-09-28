@@ -29,6 +29,8 @@ public class LearningController : Controller
             .AsNoTracking()
             .Where(sc => sc.StudentId == studentId)
             .Include(sc => sc.Course)
+                .ThenInclude(c => c.Modules)
+                    .ThenInclude(m => m.Quizzes)
             .OrderByDescending(sc => sc.EnrollmentDate)
             .ToListAsync();
 
@@ -42,17 +44,6 @@ public class LearningController : Controller
                 p => p.ModuleId,
                 m => m.ModuleId,
                 (_, m) => new { m.CourseId, m.ModuleId })
-            .ToListAsync();
-
-        var quizStats = await _context.QuizAttempts
-            .AsNoTracking()
-            .Where(a => a.StudentId == studentId)
-            .GroupBy(a => a.QuizId)
-            .Select(g => new
-            {
-                Attempts = g.Count(),
-                Average = g.Average(a => a.Percentage)
-            })
             .ToListAsync();
 
         var totalAttempts = await _context.QuizAttempts
@@ -75,7 +66,7 @@ public class LearningController : Controller
         foreach (var enrollment in enrollments)
         {
             var course = enrollment.Course;
-            var totalModules = await _context.Modules.CountAsync(m => m.CourseId == course.Id);
+            var totalModules = course.Modules.Count;
             var completedModules = completedModuleIds.Count(x => x.CourseId == course.Id);
             var progress = totalModules == 0
                 ? 0
@@ -91,10 +82,7 @@ public class LearningController : Controller
                 TotalModules = totalModules,
                 CompletedModules = completedModules,
                 ProgressPercentage = progress,
-                QuizCount = await _context.Quizzes
-                    .AsNoTracking()
-                    .Where(q => q.Module.CourseId == course.Id)
-                    .CountAsync(),
+                QuizCount = course.Modules.Sum(m => m.Quizzes.Count),
                 IsCompleted = enrollment.CompletedAt.HasValue,
                 EnrollmentDate = enrollment.EnrollmentDate,
                 CompletedAt = enrollment.CompletedAt
