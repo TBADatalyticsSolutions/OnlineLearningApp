@@ -7,7 +7,6 @@ using OnlineLearningApp.Models;
 
 namespace OnlineLearningApp.Controllers;
 
-[AllowAnonymous]
 public class AccountController : Controller
 {
     private readonly UserManager<Account> _userManager;
@@ -86,6 +85,7 @@ public class AccountController : Controller
         return View(loginVM);
     }
 
+    [AllowAnonymous]
     [AllowAnonymous]
     public IActionResult Register() => View(new RegisterViewModel());
 
