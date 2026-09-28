@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using OnlineLearningApp;
 using OnlineLearningApp.Data;
@@ -65,7 +66,17 @@ builder.Services.AddScoped<ICourseCompletionService, CourseCompletionService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ShoppingCart>(sp => ShoppingCart.GetShoppingCart(sp));
 
-builder.Services.AddDistributedMemoryCache();
+var redisConnection = builder.Configuration["REDIS_URL"];
+if (!string.IsNullOrWhiteSpace(redisConnection))
+{
+    builder.Services.AddStackExchangeRedisCache(options => options.Configuration = redisConnection);
+}
+else
+{
+    builder.Services.AddDistributedMemoryCache();
+}
+
+builder.Services.AddHealthChecks();
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -77,6 +88,14 @@ builder.Services.AddSession(options =>
 });
 
 var app = builder.Build();
+
+var forwardedHeaders = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+};
+forwardedHeaders.KnownNetworks.Clear();
+forwardedHeaders.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardedHeaders);
 
 if (!app.Environment.IsDevelopment())
 {
@@ -91,6 +110,8 @@ app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapHealthChecks("/health");
 
 app.MapControllerRoute(
     name: "default",
