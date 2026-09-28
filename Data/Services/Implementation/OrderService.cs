@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using OnlineLearningApp.Data;
 
 namespace OnlineLearningApp;
@@ -11,39 +11,61 @@ public class OrderService : IOrderService
     {
         _context = context;
     }
+
     public async Task<List<Order>> GetOrdersByUserIdAndRoleAsync(string userId, string userRole)
     {
-        var orders = await _context.Orders.Include(n => n.OrderItems).ThenInclude(n => n.Course).Include(n => n.Account).ToListAsync();
+        var query = _context.Orders
+            .AsNoTracking()
+            .Include(o => o.OrderItems)
+                .ThenInclude(item => item.Course)
+            .Include(o => o.Account)
+            .AsQueryable();
 
-        if (userRole != "Admin")
+        if (!string.Equals(userRole, UserRoles.Admin, StringComparison.Ordinal))
         {
-            orders = orders.Where(n => n.AccountId.ToString() == userId).ToList();
+            query = query.Where(o => o.AccountId == userId);
         }
 
-        return orders;
+        return await query
+            .OrderByDescending(o => o.OrderDate)
+            .ToListAsync();
     }
 
-    public async Task StoreOrderAsync(List<ShoppingCartItem> items, string userId, string userEmailAddress)
+    public async Task StoreOrderAsync(
+        List<ShoppingCartItem> items,
+        string userId,
+        string userEmailAddress)
     {
-        var order = new Order()
+        if (items.Count == 0)
+        {
+            throw new InvalidOperationException("Cannot create an order from an empty cart.");
+        }
+
+        var totalAmount = items.Sum(item => item.Course.Price * item.Amount);
+
+        var order = new Order
         {
             AccountId = userId,
-            Email = userEmailAddress
+            Email = userEmailAddress,
+            OrderDate = DateTime.UtcNow,
+            TotalAmount = totalAmount
         };
+
         await _context.Orders.AddAsync(order);
         await _context.SaveChangesAsync();
 
         foreach (var item in items)
         {
-            var orderItem = new OrderItem()
+            await _context.OrderItems.AddAsync(new OrderItem
             {
                 Amount = item.Amount,
+                Quantity = item.Amount,
                 CourseId = item.Course.Id,
                 OrderId = order.Id,
                 Price = item.Course.Price
-            };
-            await _context.OrderItems.AddAsync(orderItem);
+            });
         }
+
         await _context.SaveChangesAsync();
     }
 }
