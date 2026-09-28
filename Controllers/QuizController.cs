@@ -126,6 +126,7 @@ public class QuizController : Controller
 
         var totalQuestions = quiz.Questions.Count;
         var percentage = totalQuestions == 0 ? 0 : Math.Round(score * 100m / totalQuestions, 2);
+        var passed = totalQuestions > 0 && percentage >= quiz.PassMark;
         var attemptedAt = DateTime.UtcNow;
 
         _context.QuizAttempts.Add(new QuizAttempt
@@ -135,6 +136,7 @@ public class QuizController : Controller
             Score = score,
             TotalQuestions = totalQuestions,
             Percentage = percentage,
+            Passed = passed,
             AttemptedAt = attemptedAt
         });
 
