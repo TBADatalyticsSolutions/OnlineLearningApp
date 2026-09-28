@@ -59,7 +59,22 @@ public class QuizController : Controller
             return RedirectToAction("Details", "Course", new { id = quiz.Module.CourseId });
         }
 
-        return View(BuildViewModel(quiz));
+        var latestAttempt = await _context.QuizAttempts
+            .AsNoTracking()
+            .Where(a => a.StudentId == studentId && a.QuizId == id)
+            .OrderByDescending(a => a.AttemptedAt)
+            .FirstOrDefaultAsync();
+
+        var viewModel = BuildViewModel(quiz);
+        if (latestAttempt != null)
+        {
+            viewModel.LastScore = latestAttempt.Score;
+            viewModel.LastTotalQuestions = latestAttempt.TotalQuestions;
+            viewModel.LastPercentage = latestAttempt.Percentage;
+            viewModel.AttemptedAt = latestAttempt.AttemptedAt;
+        }
+
+        return View(viewModel);
     }
 
     [HttpPost]
@@ -109,11 +124,31 @@ public class QuizController : Controller
             }
         }
 
+        var totalQuestions = quiz.Questions.Count;
+        var percentage = totalQuestions == 0 ? 0 : Math.Round(score * 100m / totalQuestions, 2);
+        var attemptedAt = DateTime.UtcNow;
+
+        _context.QuizAttempts.Add(new QuizAttempt
+        {
+            StudentId = studentId,
+            QuizId = quiz.QuizId,
+            Score = score,
+            TotalQuestions = totalQuestions,
+            Percentage = percentage,
+            AttemptedAt = attemptedAt
+        });
+
+        await _context.SaveChangesAsync();
+
         var result = BuildViewModel(quiz);
         result.Answers = answers;
         result.Score = score;
-        result.TotalQuestions = quiz.Questions.Count;
+        result.TotalQuestions = totalQuestions;
         result.Submitted = true;
+        result.LastScore = score;
+        result.LastTotalQuestions = totalQuestions;
+        result.LastPercentage = percentage;
+        result.AttemptedAt = attemptedAt;
 
         return View("Take", result);
     }
