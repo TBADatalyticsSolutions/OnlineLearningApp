@@ -302,6 +302,7 @@ public class CourseController : Controller
             Category = courseDetails.Category,
             Status = courseDetails.Status,
             InstructorId = courseDetails.InstructorId,
+            RequireAllQuizzesPassed = courseDetails.RequireAllQuizzesPassed,
             ModuleIds = courseDetails.Courses_Modules.Select(n => n.ModuleId).ToList()
         };
 
