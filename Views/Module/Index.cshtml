@@ -1,50 +1,29 @@
-﻿@model IEnumerable<OnlineLearningApp.Models.Module>
-
+@model IEnumerable<OnlineLearningApp.Models.Module>
 @{
     ViewData["Title"] = "Modules";
 }
-<h2>Modules</h2>
-
-<div class="row">
-    @foreach (var module in Model)
-    {
-        <div class="col-md-4 col-xs-6 border-primary mb-3">
-            <div class="card mb-3" style="max-width: 540px;">
-                <div class="row g-0">
-                    <div class="col-md-12">
-                        <div class="card-header text-white bg-info">
-                            <p class="card-text">
-                                <h5 class="card-title">
-                                    @module.ModuleName
-                                    @if (User?.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
-                                    {
-                                        <a class="text-white float-right" asp-action="Edit" asp-route-id="@module.ModuleId"><i class="bi bi-pencil-square"></i></a>
-                                    }
-                                </h5>
-                            </p>
-                        </div>
+<div class="container-fluid px-3 px-lg-4 py-4 py-lg-5">
+    <div class="mb-4">
+        <div class="eyebrow">Academic content</div>
+        <h1 class="section-title h2 mb-1">Course modules</h1>
+        <p class="text-muted-custom mb-0">Review the learning modules currently available in the platform.</p>
+    </div>
+    <div class="row g-4">
+        @foreach (var module in Model)
+        {
+            <div class="col-md-6 col-xl-4">
+                <article class="dashboard-card h-100 p-4">
+                    <span class="category-badge">Module @module.ModuleId</span>
+                    <h2 class="h5 fw-bold mt-3">@module.ModuleName</h2>
+                    <p class="small text-muted-custom">@module.Content</p>
+                    <div class="small text-muted-custom mb-3">
+                        <i class="bi bi-journal-text me-1"></i> @module.Quizzes.Count checkpoint(s)
                     </div>
-                    <div class="col-md-6">
-                        @* Image handling can be added if needed, for now, using a placeholder *@
-                        <img src="https://via.placeholder.com/150" width="100%" alt="@module.ModuleName">
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card-body">
-                            <p class="card-text">@module.Content</p>
-                            @* Include any other module details if needed *@
-                        </div>
-                    </div>
-                    <div class="col-md-12">
-                        <div class="card-footer">
-                            <p class="card-text">
-                                <a class="btn btn-outline-primary float-right" asp-action="Details" asp-route-id="@module.ModuleId">
-                                    <i class="bi bi-eye-fill"></i> Show Details
-                                </a>
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                    <a asp-controller="Course" asp-action="Details" asp-route-id="@module.CourseId" class="btn btn-soft btn-sm">
+                        View course <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </article>
             </div>
-        </div>
-    }
+        }
+    </div>
 </div>
