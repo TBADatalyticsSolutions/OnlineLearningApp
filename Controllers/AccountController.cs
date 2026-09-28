@@ -86,7 +86,6 @@ public class AccountController : Controller
     }
 
     [AllowAnonymous]
-    [AllowAnonymous]
     public IActionResult Register() => View(new RegisterViewModel());
 
     [HttpPost]
