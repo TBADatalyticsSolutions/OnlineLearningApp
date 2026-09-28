@@ -9,6 +9,7 @@ public class Quiz
         public int QuizId { get; set; }
         public string QuizName { get; set; } = default!;
         public string Description { get; set; } = default!;
+        public decimal PassMark { get; set; } = 70m;
         public DateTime DateCreated { get; set; }
         public int ModuleId { get; set; }
         [ForeignKey("ModuleId")]
