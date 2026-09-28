@@ -8,7 +8,6 @@ using System.Security.Claims;
 
 namespace OnlineLearningApp.Controllers;
 
-[Authorize(Roles = UserRoles.Admin)]
 public class CourseController : Controller
 {
     private readonly ICourseService _service;
@@ -261,7 +260,7 @@ public class CourseController : Controller
     {
         var courseDropdownsData = await _service.GetNewCourseDropdownsValues();
 
-        ViewBag.Categories = new SelectList(courseDropdownsData.Categories, "Id", "Name");
+        ViewBag.Categories = new SelectList(courseDropdownsData.Categories);
         ViewBag.Instructors = new SelectList(courseDropdownsData.Instructors, "UserId", "FullName");
 
         return View();
@@ -275,7 +274,7 @@ public class CourseController : Controller
         {
             var courseDropdownsData = await _service.GetNewCourseDropdownsValues();
 
-            ViewBag.Categories = new SelectList(courseDropdownsData.Categories, "Id", "Name");
+            ViewBag.Categories = new SelectList(courseDropdownsData.Categories);
             ViewBag.Instructors = new SelectList(courseDropdownsData.Instructors, "UserId", "FullName");
 
             return View(course);
@@ -309,8 +308,8 @@ public class CourseController : Controller
         };
 
         var courseDropdownsData = await _service.GetNewCourseDropdownsValues();
-        ViewBag.Categories = new SelectList(courseDropdownsData.Categories, "Id", "Name");
-        ViewBag.Instructors = new SelectList(courseDropdownsData.Instructors, "Id", "FullName");
+        ViewBag.Categories = new SelectList(courseDropdownsData.Categories);
+        ViewBag.Instructors = new SelectList(courseDropdownsData.Instructors, "UserId", "FullName", response.InstructorId);
 
         return View(response);
     }
@@ -328,8 +327,8 @@ public class CourseController : Controller
         {
             var courseDropdownsData = await _service.GetNewCourseDropdownsValues();
 
-            ViewBag.Categories = new SelectList(courseDropdownsData.Categories, "Id", "Name");
-            ViewBag.Instructors = new SelectList(courseDropdownsData.Instructors, "Id", "FullName");
+            ViewBag.Categories = new SelectList(courseDropdownsData.Categories);
+            ViewBag.Instructors = new SelectList(courseDropdownsData.Instructors, "UserId", "FullName", course.InstructorId);
 
             return View(course);
         }
