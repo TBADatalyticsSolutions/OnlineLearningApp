@@ -102,6 +102,8 @@ public class CourseController : Controller
             .Include(c => c.Instructor)
             .Include(c => c.Modules.OrderBy(m => m.ModuleId))
                 .ThenInclude(m => m.Quizzes)
+            .Include(c => c.Modules)
+                .ThenInclude(m => m.Materials)
             .FirstOrDefaultAsync(c => c.Id == id);
 
         if (course is null)
