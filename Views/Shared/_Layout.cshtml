@@ -28,6 +28,7 @@
                     @if (User?.Identity?.IsAuthenticated == true && User.IsInRole("Student"))
                     {
                         <li class="nav-item"><a class="nav-link app-nav-link" asp-controller="Learning" asp-action="Index"><i class="bi bi-journal-bookmark me-1"></i> My Learning</a></li>
+                        <li class="nav-item"><a class="nav-link app-nav-link" asp-controller="Quiz" asp-action="History"><i class="bi bi-clipboard2-check me-1"></i> Assessments</a></li>
                     }
                     @if (User?.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
                     {
