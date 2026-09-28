@@ -1,62 +1,29 @@
-@model OnlineLearningApp.ViewModels.NewCourseViewModel
-
+@model OnlineLearningApp.NewCourseViewModel
 @{
-    ViewData["Title"] = "Edit Course";
+    ViewData["Title"] = "Edit course";
 }
-
-<h2>Edit Course</h2>
-
-<form asp-action="Edit" method="post">
-    <div class="form-group">
-        <label asp-for="CourseName" class="control-label"></label>
-        <input asp-for="CourseName" class="form-control" />
-        <span asp-validation-for="CourseName" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Description" class="control-label"></label>
-        <textarea asp-for="Description" class="form-control"></textarea>
-        <span asp-validation-for="Description" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="StartDate" class="control-label"></label>
-        <input asp-for="StartDate" class="form-control" />
-        <span asp-validation-for="StartDate" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="EndDate" class="control-label"></label>
-        <input asp-for="EndDate" class="form-control" />
-        <span asp-validation-for="EndDate" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Category" class="control-label"></label>
-        <select asp-for="Category" class="form-control" asp-items="ViewBag.Categories"></select>
-        <span asp-validation-for="Category" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="InstructorId" class="control-label"></label>
-        <select asp-for="InstructorId" class="form-control" asp-items="ViewBag.Instructors"></select>
-        <span asp-validation-for="InstructorId" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Price" class="control-label"></label>
-        <input asp-for="Price" class="form-control" />
-        <span asp-validation-for="Price" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="ImageURL" class="control-label"></label>
-        <input asp-for="ImageURL" class="form-control" />
-        <span asp-validation-for="ImageURL" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Status" class="control-label"></label>
-        <select asp-for="Status" class="form-control">
-            <option value="Pending">Pending</option>
-            <option value="Ongoing">Ongoing</option>
-            <option value="Completed">Completed</option>
-        </select>
-        <span asp-validation-for="Status" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <input type="submit" value="Save Changes" class="btn btn-primary" />
-    </div>
-</form>
+<div class="container py-5">
+    <div class="row justify-content-center"><div class="col-xl-9">
+        <div class="surface p-4 p-lg-5">
+            <div class="eyebrow">Administration</div>
+            <h1 class="h2 fw-bold mt-2">Create course</h1>
+            <p class="text-muted-custom">Publish a structured learning pathway with an instructor, schedule and pricing.</p>
+            <form asp-action="Edit" method="post" class="mt-4">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3"></div>
+                <div class="row g-3">
+                    <div class="col-md-8"><label asp-for="CourseName" class="form-label"></label><input asp-for="CourseName" class="form-control" /><span asp-validation-for="CourseName" class="text-danger small"></span></div>
+                    <div class="col-md-4"><label asp-for="Category" class="form-label"></label><select asp-for="Category" class="form-select" asp-items="ViewBag.Categories"></select><span asp-validation-for="Category" class="text-danger small"></span></div>
+                    <div class="col-12"><label asp-for="Description" class="form-label"></label><textarea asp-for="Description" class="form-control" rows="5"></textarea><span asp-validation-for="Description" class="text-danger small"></span></div>
+                    <div class="col-md-6"><label asp-for="InstructorId" class="form-label"></label><select asp-for="InstructorId" class="form-select" asp-items="ViewBag.Instructors"><option value="">Select instructor</option></select><span asp-validation-for="InstructorId" class="text-danger small"></span></div>
+                    <div class="col-md-6"><label asp-for="ImageURL" class="form-label"></label><input asp-for="ImageURL" class="form-control" placeholder="images/course-cover.jpg" /><span asp-validation-for="ImageURL" class="text-danger small"></span></div>
+                    <div class="col-md-4"><label asp-for="Price" class="form-label"></label><div class="input-group"><span class="input-group-text">₦</span><input asp-for="Price" class="form-control" /></div><span asp-validation-for="Price" class="text-danger small"></span></div>
+                    <div class="col-md-4"><label asp-for="StartDate" class="form-label"></label><input asp-for="StartDate" class="form-control" /><span asp-validation-for="StartDate" class="text-danger small"></span></div>
+                    <div class="col-md-4"><label asp-for="EndDate" class="form-label"></label><input asp-for="EndDate" class="form-control" /><span asp-validation-for="EndDate" class="text-danger small"></span></div>
+                    <div class="col-md-4"><label asp-for="Status" class="form-label"></label><select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<OnlineLearningApp.Data.CourseStatus>()"></select><span asp-validation-for="Status" class="text-danger small"></span></div>
+                </div>
+                <div class="d-flex gap-2 mt-4"><button class="btn btn-primary" type="submit">Save changes</button><a asp-action="Index" class="btn btn-soft">Cancel</a></div>
+            </form>
+        </div>
+    </div></div>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }
