@@ -72,7 +72,8 @@ public class OnlineLearningAppDbContext : IdentityDbContext<Account>
             .HasOne(m => m.UploadedBy)
             .WithMany()
             .HasForeignKey(m => m.UploadedById)
-            .OnDelete(DeleteBehavior.Restrict);
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<Quiz>()
             .HasOne(q => q.Module).WithMany(m => m.Quizzes)
