@@ -32,12 +32,12 @@ public class InstructorController : Controller
             .Include(c => c.Modules)
                 .ThenInclude(m => m.Quizzes)
             .OrderByDescending(c => c.StartDate)
-            .Select(c => new InstructorCourseViewModel
+            .Select(c => new
             {
-                CourseId = c.Id,
-                CourseName = c.CourseName,
-                Category = c.Category.GetDescription(),
-                Status = c.Status.ToString(),
+                c.Id,
+                c.CourseName,
+                c.Category,
+                c.Status,
                 ModuleCount = c.Modules.Count,
                 QuizCount = c.Modules.SelectMany(m => m.Quizzes).Count(),
                 StudentCount = _context.StudentCourses.Count(sc => sc.CourseId == c.Id)
@@ -46,7 +46,16 @@ public class InstructorController : Controller
 
         var model = new InstructorDashboardViewModel
         {
-            Courses = courses
+            Courses = courses.Select(c => new InstructorCourseViewModel
+            {
+                CourseId = c.Id,
+                CourseName = c.CourseName,
+                Category = c.Category.GetDescription(),
+                Status = c.Status.ToString(),
+                ModuleCount = c.ModuleCount,
+                QuizCount = c.QuizCount,
+                StudentCount = c.StudentCount
+            }).ToList()
         };
 
         return View(model);
