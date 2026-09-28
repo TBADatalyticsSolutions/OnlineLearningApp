@@ -1,90 +1,56 @@
 @model OnlineLearningApp.Models.Course
-
 @{
-    ViewData["Title"] = $"Learn - {Model.CourseName}";
+    ViewData["Title"] = $"Learning · {Model.CourseName}";
 }
-
-<div class="container py-4">
-    <div class="mb-4">
-        <a asp-action="Details" asp-route-id="@Model.Id" class="text-decoration-none">
-            <i class="bi bi-arrow-left"></i> Back to course
-        </a>
-        <div class="mt-3 p-4 rounded-4 bg-dark text-white">
-            <span class="badge bg-success mb-2">@Model.Category</span>
-            <h1 class="fw-bold mb-2">@Model.CourseName</h1>
-            <p class="mb-0 text-white-50">@Model.Description</p>
-        </div>
-    </div>
-
+<div class="container-fluid px-3 px-lg-4 py-4">
     <div class="row g-4">
-        <div class="col-lg-8">
-            <h2 class="h4 fw-bold mb-3">Course modules</h2>
-
-            @if (!Model.Modules.Any())
-            {
-                <div class="alert alert-info">No modules have been published for this course yet.</div>
-            }
-            else
-            {
-                <div class="accordion" id="moduleAccordion">
-                    @foreach (var module in Model.Modules.OrderBy(m => m.ModuleId))
-                    {
-                        var headingId = $"heading-{module.ModuleId}";
-                        var collapseId = $"collapse-{module.ModuleId}";
-
-                        <div class="accordion-item mb-3 border rounded-3 overflow-hidden">
-                            <h2 class="accordion-header" id="@headingId">
-                                <button class="accordion-button collapsed fw-semibold" type="button"
-                                        data-bs-toggle="collapse" data-bs-target="#@collapseId"
-                                        aria-expanded="false" aria-controls="@collapseId">
-                                    <span class="me-3">Module @module.ModuleId</span>
-                                    @module.ModuleName
-                                </button>
-                            </h2>
-                            <div id="@collapseId" class="accordion-collapse collapse"
-                                 aria-labelledby="@headingId" data-bs-parent="#moduleAccordion">
-                                <div class="accordion-body">
-                                    <p class="text-secondary">@module.Content</p>
-
-                                    @foreach (var quiz in module.Quizzes.OrderBy(q => q.QuizId))
-                                    {
-                                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 p-3 bg-light rounded-3">
-                                            <div>
-                                                <div class="fw-semibold">@quiz.QuizName</div>
-                                                <small class="text-secondary">@quiz.Questions.Count question(s)</small>
-                                            </div>
-                                            <a asp-controller="Quiz" asp-action="Take" asp-route-id="@quiz.QuizId"
-                                               class="btn btn-outline-primary">
-                                                <i class="bi bi-ui-checks"></i> Take checkpoint
-                                            </a>
-                                        </div>
-                                    }
-                                </div>
+        <div class="col-xl-8">
+            <a asp-action="Details" asp-route-id="@Model.Id" class="small text-decoration-none"><i class="bi bi-arrow-left me-1"></i> Course overview</a>
+            <div class="mt-3 mb-4">
+                <div class="eyebrow">@Model.Category · Learning workspace</div>
+                <h1 class="h2 fw-bold mb-2">@Model.CourseName</h1>
+                <p class="text-muted-custom mb-0">Work through each module and complete the checkpoint assessments.</p>
+            </div>
+            @if (!Model.Modules.Any()) { <div class="empty-state">No modules have been published yet.</div> }
+            else {
+                <div class="d-flex flex-column gap-3">
+                @foreach (var module in Model.Modules.OrderBy(m => m.ModuleId)) {
+                    <div class="module-card">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#module-@module.ModuleId">
+                            <span class="badge rounded-pill bg-primary-subtle text-primary me-3">@(module.ModuleId.ToString("00"))</span>
+                            <span>@module.ModuleName</span>
+                        </button>
+                        <div id="module-@module.ModuleId" class="collapse">
+                            <div class="lesson-panel">
+                                <div class="eyebrow mb-2">Lesson content</div>
+                                <p class="text-muted-custom mb-4">@module.Content</p>
+                                @foreach (var quiz in module.Quizzes.OrderBy(q => q.QuizId)) {
+                                    <div class="surface p-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                                        <div><strong>@quiz.QuizName</strong><div class="small text-muted-custom mt-1">@quiz.Questions.Count question(s) · Check your understanding</div></div>
+                                        <a asp-controller="Quiz" asp-action="Take" asp-route-id="@quiz.QuizId" class="btn btn-primary"><i class="bi bi-play-circle me-1"></i> Start checkpoint</a>
+                                    </div>
+                                }
                             </div>
                         </div>
-                    }
+                    </div>
+                }
                 </div>
             }
         </div>
-
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm rounded-4 sticky-lg-top" style="top: 1rem;">
-                <div class="card-body p-4">
-                    <h3 class="h5 fw-bold">Your learning path</h3>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-secondary">Modules</span>
-                        <strong>@Model.Modules.Count</strong>
-                    </div>
-                    <div class="d-flex justify-content-between mb-3">
-                        <span class="text-secondary">Checkpoints</span>
-                        <strong>@Model.Modules.Sum(m => m.Quizzes.Count)</strong>
-                    </div>
-                    <hr />
-                    <p class="small text-secondary mb-0">
-                        Work through each module and use its checkpoint quiz to test your understanding.
-                    </p>
+        <div class="col-xl-4">
+            <aside class="learning-sidebar">
+                <div class="dashboard-card p-4 mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2"><strong>Course progress</strong><span class="small fw-bold text-primary">0%</span></div>
+                    <div class="progress mb-3"><div class="progress-bar" style="width:0%"></div></div>
+                    <div class="d-flex justify-content-between small text-muted-custom"><span>0 of @Model.Modules.Count modules</span><span>Keep going</span></div>
                 </div>
-            </div>
+                <div class="dashboard-card p-4">
+                    <div class="eyebrow">Course at a glance</div>
+                    <div class="d-flex justify-content-between py-3 border-bottom"><span class="text-muted-custom">Modules</span><strong>@Model.Modules.Count</strong></div>
+                    <div class="d-flex justify-content-between py-3 border-bottom"><span class="text-muted-custom">Checkpoints</span><strong>@Model.Modules.Sum(m => m.Quizzes.Count)</strong></div>
+                    <div class="d-flex justify-content-between py-3"><span class="text-muted-custom">Instructor</span><strong>@(Model.Instructor?.FullName ?? "Instructor")</strong></div>
+                </div>
+            </aside>
         </div>
     </div>
 </div>
