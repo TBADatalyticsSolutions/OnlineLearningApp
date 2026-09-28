@@ -56,7 +56,7 @@ public class AppInitializer
             UserRoles.Student,
             logger);
 
-        SeedModernCourseCatalog(context);
+        await SeedModernCourseCatalogAsync(context);
     }
 
     private static async Task SeedAccountAsync(
@@ -116,9 +116,9 @@ public class AppInitializer
         }
     }
 
-    private static void SeedModernCourseCatalog(OnlineLearningAppDbContext context)
+    private static async Task SeedModernCourseCatalogAsync(OnlineLearningAppDbContext context)
     {
-        var instructor = context.Accounts.FirstOrDefault(a => a.Role == UserRoles.Instructor);
+        var instructor = await context.Accounts.FirstOrDefaultAsync(a => a.Role == UserRoles.Instructor);
         if (instructor is null)
         {
             return;
@@ -262,7 +262,7 @@ public class AppInitializer
 
         foreach (var item in catalog)
         {
-            var course = context.Courses.FirstOrDefault(c => c.CourseName == item.Name);
+            var course = await context.Courses.FirstOrDefaultAsync(c => c.CourseName == item.Name);
 
             if (course is null)
             {
@@ -280,25 +280,25 @@ public class AppInitializer
                 };
 
                 context.Courses.Add(course);
-                context.SaveChanges();
+                await context.SaveChangesAsync();
 
                 // CourseId is a legacy duplicate key retained for compatibility with older code.
                 course.CourseId = course.Id;
                 context.SaveChanges();
             }
 
-            SeedModulesAndQuiz(context, course, item.Modules);
+            await SeedModulesAndQuizAsync(context, course, item.Modules);
         }
     }
 
-    private static void SeedModulesAndQuiz(
+    private static async Task SeedModulesAndQuizAsync(
         OnlineLearningAppDbContext context,
         Course course,
         (string Name, string Content)[] moduleSeeds)
     {
         foreach (var moduleSeed in moduleSeeds)
         {
-            var module = context.Modules.FirstOrDefault(
+            var module = await context.Modules.FirstOrDefaultAsync(
                 m => m.CourseId == course.Id && m.ModuleName == moduleSeed.Name);
 
             if (module is null)
@@ -315,7 +315,7 @@ public class AppInitializer
             }
 
             var quizName = $"{moduleSeed.Name} Checkpoint";
-            var quiz = context.Quizzes.FirstOrDefault(
+            var quiz = await context.Quizzes.FirstOrDefaultAsync(
                 q => q.ModuleId == module.ModuleId && q.QuizName == quizName);
 
             if (quiz is null)
