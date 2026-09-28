@@ -164,6 +164,7 @@ public class QuizController : Controller
             Description = quiz.Description,
             CourseId = quiz.Module.CourseId,
             CourseName = quiz.Module.Course.CourseName,
+            PassMark = quiz.PassMark,
             TotalQuestions = quiz.Questions.Count,
             Questions = quiz.Questions
                 .OrderBy(q => q.QuestionId)
