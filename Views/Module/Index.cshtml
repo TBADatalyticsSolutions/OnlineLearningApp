@@ -18,10 +18,19 @@
                     <p class="small text-muted-custom">@module.Content</p>
                     <div class="small text-muted-custom mb-3">
                         <i class="bi bi-journal-text me-1"></i> @module.Quizzes.Count checkpoint(s)
+                        <span class="ms-3"><i class="bi bi-paperclip me-1"></i> @module.Materials.Count material(s)</span>
                     </div>
-                    <a asp-controller="Course" asp-action="Details" asp-route-id="@module.CourseId" class="btn btn-soft btn-sm">
-                        View course <i class="bi bi-arrow-right ms-1"></i>
-                    </a>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a asp-controller="Course" asp-action="Details" asp-route-id="@module.CourseId" class="btn btn-soft btn-sm">
+                            View course <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                        @if (User.IsInRole(UserRoles.Admin))
+                        {
+                            <a asp-controller="Materials" asp-action="Create" asp-route-moduleId="@module.ModuleId" class="btn btn-primary btn-sm">
+                                <i class="bi bi-cloud-arrow-up me-1"></i> Add material
+                            </a>
+                        }
+                    </div>
                 </article>
             </div>
         }
