@@ -187,8 +187,23 @@ public class CourseController : Controller
         if (moduleCount > 0 && completedCount >= moduleCount)
         {
             enrollment.CompletedAt ??= DateTime.UtcNow;
+
+            var certificateExists = await _context.Certificates
+                .AnyAsync(c => c.StudentId == studentId && c.CourseId == courseId);
+
+            if (!certificateExists)
+            {
+                _context.Certificates.Add(new Certificate
+                {
+                    CertificateNumber = $"TBA-{DateTime.UtcNow:yyyy}-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}",
+                    StudentId = studentId,
+                    CourseId = courseId,
+                    IssuedAt = DateTime.UtcNow
+                });
+            }
+
             await _context.SaveChangesAsync();
-            TempData["Success"] = "Course completed. Congratulations on finishing the learning pathway!";
+            TempData["Success"] = "Course completed. Your certificate is now available.";
         }
         else
         {
