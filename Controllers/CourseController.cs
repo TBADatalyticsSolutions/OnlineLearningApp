@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace OnlineLearningApp.Controllers;
+
 [Authorize(Roles = UserRoles.Admin)]
 public class CourseController : Controller
 {
@@ -23,20 +24,22 @@ public class CourseController : Controller
     [AllowAnonymous]
     public async Task<IActionResult> Filter(string searchString)
     {
-        var allCourses = await _service.GetAllAsync(); // No need to use Include here
+        var allCourses = await _service.GetAllAsync();
 
-        if (!string.IsNullOrEmpty(searchString))
+        if (!string.IsNullOrWhiteSpace(searchString))
         {
-            var filteredResultNew = allCourses.Where(n =>
-                string.Equals(n.CourseName, searchString, StringComparison.CurrentCultureIgnoreCase) ||
-                string.Equals(n.Description, searchString, StringComparison.CurrentCultureIgnoreCase)).ToList();
+            var term = searchString.Trim();
 
-            return View("Index", filteredResultNew);
+            allCourses = allCourses
+                .Where(course =>
+                    course.CourseName.Contains(term, StringComparison.CurrentCultureIgnoreCase) ||
+                    course.Description.Contains(term, StringComparison.CurrentCultureIgnoreCase) ||
+                    course.Category.ToString().Contains(term, StringComparison.CurrentCultureIgnoreCase))
+                .ToList();
         }
 
         return View("Index", allCourses);
     }
-
 
     // GET: Courses/Details/1
     [AllowAnonymous]
@@ -47,6 +50,7 @@ public class CourseController : Controller
         {
             return View("NotFound");
         }
+
         return View(courseDetail);
     }
 
@@ -75,6 +79,7 @@ public class CourseController : Controller
 
             return View(course);
         }
+
         await _service.AddNewCourseAsync(course);
         return RedirectToAction(nameof(Index));
     }
@@ -84,9 +89,12 @@ public class CourseController : Controller
     public async Task<IActionResult> Edit(int id)
     {
         var courseDetails = await _service.GetCourseByIdAsync(id);
-        if (courseDetails == null) return View("NotFound");
+        if (courseDetails == null)
+        {
+            return View("NotFound");
+        }
 
-        var response = new NewCourseViewModel()
+        var response = new NewCourseViewModel
         {
             Id = courseDetails.Id,
             CourseName = courseDetails.CourseName,
@@ -111,7 +119,10 @@ public class CourseController : Controller
     [Authorize(Roles = UserRoles.Admin)]
     public async Task<IActionResult> Edit(int id, NewCourseViewModel course)
     {
-        if (id != course.Id) return View("NotFound");
+        if (id != course.Id)
+        {
+            return View("NotFound");
+        }
 
         if (!ModelState.IsValid)
         {
