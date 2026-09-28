@@ -19,7 +19,7 @@ public class ShoppingCartSummary : ViewComponent
         var items = await _shoppingCart.GetShoppingCartItemsAsync();
         _shoppingCart.ShoppingCartItems = items;
 
-        var shoppingCartItemCount = items?.Count ?? 0;
+        var shoppingCartItemCount = items?.Sum(item => item.Amount) ?? 0;
 
         return View(shoppingCartItemCount); // returning an int
     }
