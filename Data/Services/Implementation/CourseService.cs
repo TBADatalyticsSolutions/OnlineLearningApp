@@ -54,13 +54,21 @@ public class CourseService : EntityBaseRepository<Course>, ICourseService
 
     public async Task<NewCourseDropdownViewModel> GetNewCourseDropdownsValues()
     {
-        var accounts = await _context.Accounts.OrderBy(n => n.FullName).ToListAsync();
+        var instructorRoleId = await _context.Roles
+            .Where(r => r.Name == UserRoles.Instructor)
+            .Select(r => r.Id)
+            .FirstOrDefaultAsync();
 
-        var instructors = accounts.Select(a => new User
-        {
-            UserId = a.Id,
-            FullName = a.FullName
-        }).ToList();
+        var instructors = await _context.Accounts
+            .Where(a => instructorRoleId != null &&
+                        _context.UserRoles.Any(ur => ur.UserId == a.Id && ur.RoleId == instructorRoleId))
+            .OrderBy(a => a.FullName)
+            .Select(a => new User
+            {
+                UserId = a.Id,
+                FullName = a.FullName
+            })
+            .ToListAsync();
 
         var categories = Enum.GetValues(typeof(CourseCategory))
                         .Cast<CourseCategory>()
