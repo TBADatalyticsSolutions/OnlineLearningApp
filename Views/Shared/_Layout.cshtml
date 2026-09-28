@@ -24,6 +24,7 @@
             <div class="collapse navbar-collapse" id="appNavigation">
                 <ul class="navbar-nav gap-lg-1 me-auto">
                     <li class="nav-item"><a class="nav-link app-nav-link" asp-controller="Course" asp-action="Index"><i class="bi bi-grid me-1"></i> Courses</a></li>
+                    <li class="nav-item"><a class="nav-link app-nav-link" asp-controller="Resources" asp-action="Index"><i class="bi bi-book-half me-1"></i> Resources</a></li>
                     @if (User?.Identity?.IsAuthenticated == true && User.IsInRole("Student"))
                     {
                         <li class="nav-item"><a class="nav-link app-nav-link" asp-controller="Learning" asp-action="Index"><i class="bi bi-journal-bookmark me-1"></i> My Learning</a></li>
@@ -92,7 +93,7 @@
                 </div>
                 <p class="small mb-0">Practical digital skills for the next generation of builders, analysts and technology professionals.</p>
             </div>
-            <div class="col-6 col-lg-2"><strong class="text-white">Learn</strong><div class="small mt-2"><a asp-controller="Course" asp-action="Index">Courses</a><br/><a asp-controller="Course" asp-action="Index">Categories</a></div></div>
+            <div class="col-6 col-lg-2"><strong class="text-white">Learn</strong><div class="small mt-2"><a asp-controller="Course" asp-action="Index">Courses</a><br/><a asp-controller="Resources" asp-action="Index">Resources</a><br/><a asp-controller="Course" asp-action="Index">Categories</a></div></div>
             <div class="col-6 col-lg-2"><strong class="text-white">Platform</strong><div class="small mt-2"><a asp-controller="Home" asp-action="Privacy">Privacy</a><br/><a asp-controller="Account" asp-action="Register">Register</a></div></div>
         </div>
         <hr class="border-secondary my-4" />
