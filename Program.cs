@@ -46,7 +46,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.Name = "TBA.Datalytics.Auth";
     options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.LoginPath = "/Account/SignIn";
     options.AccessDeniedPath = "/Account/AccessDenied";
