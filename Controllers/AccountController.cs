@@ -7,6 +7,7 @@ using System.Diagnostics;
 
 namespace OnlineLearningApp.Controllers;
 
+[AllowAnonymous]
 public class AccountController : Controller
 {
     private readonly UserManager<Account> _userManager;
@@ -20,7 +21,8 @@ public class AccountController : Controller
         _context = context;
     }
 
-    // Display the list of users
+    // Administrative user directory.
+    [Authorize(Roles = UserRoles.Admin)]
     public async Task<IActionResult> Users()
     {
         var users = await _context.Accounts.ToListAsync();
@@ -28,16 +30,19 @@ public class AccountController : Controller
     }
 
     // Login View
+    [AllowAnonymous]
     public IActionResult SignIn() => View(new LoginViewModel());
 
     // Login POST action
     [HttpPost]
+    [ValidateAntiForgeryToken]
+    [AllowAnonymous]
     public async Task<IActionResult> SignIn(LoginViewModel loginVM)
     {
         if (!ModelState.IsValid) return View(loginVM);
 
         // Check if user exists by UserName
-        var user = await _userManager.FindByNameAsync(loginVM.Email);
+        var user = await _userManager.FindByEmailAsync(loginVM.Email);
         if (user == null)
         {
             TempData["Error"] = "User not found. Please, try again!";
@@ -45,7 +50,7 @@ public class AccountController : Controller
         }
 
         // Attempt to sign in using the email (assuming username is the email)
-        var result = await _signInManager.PasswordSignInAsync(user.UserName, loginVM.Password, false, false);
+        var result = await _signInManager.PasswordSignInAsync(user, loginVM.Password, loginVM.RememberMe, lockoutOnFailure: true);
         if (result.Succeeded)
         {
             // Redirect based on user role
@@ -55,11 +60,11 @@ public class AccountController : Controller
             }
             else if (await _userManager.IsInRoleAsync(user, "Instructor"))
             {
-                return RedirectToAction("InstructorDashboard", "Instructor");
+                return RedirectToAction("Index", "Learning");
             }
             else if (await _userManager.IsInRoleAsync(user, "Student"))
             {
-                return RedirectToAction("StudentDashboard", "Student");
+                return RedirectToAction("Index", "Learning");
             }
         }
         else
@@ -72,10 +77,13 @@ public class AccountController : Controller
     }
 
     // Register View
+    [AllowAnonymous]
     public IActionResult Register() => View(new RegisterViewModel());
 
     // Register POST action
     [HttpPost]
+    [ValidateAntiForgeryToken]
+    [AllowAnonymous]
     public async Task<IActionResult> Register(RegisterViewModel registerVM)
     {
         if (!ModelState.IsValid) return View(registerVM);
@@ -92,14 +100,23 @@ public class AccountController : Controller
         {
             FullName = registerVM.FullName,
             Email = registerVM.EmailAddress,
-            UserName = registerVM.EmailAddress
+            UserName = registerVM.EmailAddress,
+            Role = UserRoles.Student,
+            EmailConfirmed = false
         };
         var newUserResponse = await _userManager.CreateAsync(newUser, registerVM.Password);
 
         if (newUserResponse.Succeeded)
         {
-            var roles = new List<string> { UserRoles.Admin, UserRoles.Instructor, UserRoles.Student };
-            await _userManager.AddToRolesAsync(newUser, roles);
+            var roleResult = await _userManager.AddToRoleAsync(newUser, UserRoles.Student);
+            if (!roleResult.Succeeded)
+            {
+                foreach (var error in roleResult.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+                return View(registerVM);
+            }
 
             await _signInManager.SignInAsync(newUser, isPersistent: false);
             return RedirectToAction("RegisterCompleted");
@@ -115,6 +132,8 @@ public class AccountController : Controller
 
     // Logout POST action
     [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize]
     public async Task<IActionResult> Logout()
     {
         await _signInManager.SignOutAsync();
