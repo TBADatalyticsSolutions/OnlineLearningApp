@@ -83,8 +83,11 @@
                 <div class="col">
                     <article class="course-card h-100 position-relative">
                         <div class="course-image course-image-enhanced">
-                            <img src="@course.ImageURL" alt="@course.CourseName" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
-                            <div class="course-fallback" style="display:none;">
+                            @if (!string.IsNullOrWhiteSpace(course.ImageURL))
+                            {
+                                <img src="@course.ImageURL" alt="@course.CourseName" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                            }
+                            <div class="course-fallback" style="@(string.IsNullOrWhiteSpace(course.ImageURL) ? "display:flex;" : "display:none;")">
                                 <i class="bi @courseIcon display-3"></i>
                                 <span>@initials</span>
                             </div>
