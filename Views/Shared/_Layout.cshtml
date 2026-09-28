@@ -38,6 +38,7 @@
                                 <li><a class="dropdown-item rounded-2" asp-controller="Instructor" asp-action="Index">Instructors</a></li>
                                 <li><a class="dropdown-item rounded-2" asp-controller="Category" asp-action="Index">Categories</a></li>
                                 <li><a class="dropdown-item rounded-2" asp-controller="Account" asp-action="Users">Users</a></li>
+                                <li><a class="dropdown-item rounded-2" asp-controller="Orders" asp-action="Index">Orders</a></li>
                             </ul>
                         </li>
                     }
@@ -53,7 +54,7 @@
                 <ul class="navbar-nav align-items-lg-center">
                     @if (User?.Identity?.IsAuthenticated == true)
                     {
-                        <li class="nav-item me-lg-2"><span class="nav-link text-muted"><i class="bi bi-bell"></i></span></li>
+                        <li class="nav-item me-lg-2">@await Component.InvokeAsync("ShoppingCartSummary")</li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 app-nav-link" href="#" data-bs-toggle="dropdown">
                                 <span class="brand-mark" style="width:34px;height:34px;border-radius:10px;"><i class="bi bi-person-fill"></i></span>
@@ -93,7 +94,7 @@
                 </div>
                 <p class="small mb-0">Practical digital skills for the next generation of builders, analysts and technology professionals.</p>
             </div>
-            <div class="col-6 col-lg-2"><strong class="text-white">Learn</strong><div class="small mt-2"><a asp-controller="Course" asp-action="Index">Courses</a><br/><a asp-controller="Resources" asp-action="Index">Resources</a><br/><a asp-controller="Course" asp-action="Index">Categories</a></div></div>
+            <div class="col-6 col-lg-2"><strong class="text-white">Learn</strong><div class="small mt-2"><a asp-controller="Course" asp-action="Index">Courses</a><br/><a asp-controller="Resources" asp-action="Index">Resources</a><br/><a asp-controller="Verification" asp-action="Index">Verify certificate</a></div></div>
             <div class="col-6 col-lg-2"><strong class="text-white">Platform</strong><div class="small mt-2"><a asp-controller="Home" asp-action="Privacy">Privacy</a><br/><a asp-controller="Account" asp-action="Register">Register</a></div></div>
         </div>
         <hr class="border-secondary my-4" />
