@@ -25,6 +25,14 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
+                        @if (User?.Identity?.IsAuthenticated == true && User.IsInRole("Student"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Learning" asp-action="Index">
+                                    <i class="bi bi-journal-bookmark"></i> My Learning
+                                </a>
+                            </li>
+                        }
                         @if (User?.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
                         {
                             <li class="nav-item dropdown">
