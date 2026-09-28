@@ -168,6 +168,20 @@ public class AppInitializer
                     ("Data Projects for AI Readiness", "Build an end-to-end data project covering preparation, exploratory analysis, feature creation, and reporting.")
                 }),
             new CourseSeed(
+                "Professional Data Analytics with Python, SQL & Power BI",
+                "Build job-ready data analytics skills using Python, SQL, Excel and Power BI. Work through data cleaning, exploratory analysis, statistical reasoning, dashboards, business insights and an end-to-end portfolio project.",
+                CourseCategory.DataScience,
+                65000m,
+                14,
+                "data-analytics-python-sql-powerbi.jpg",
+                new[]
+                {
+                    ("Data Analytics Foundations & Excel", "Frame business questions, understand data types, clean spreadsheets, use formulas and pivot tables, and communicate findings clearly."),
+                    ("SQL & Python for Data Analysis", "Query relational data with SQL and use Python, pandas and NumPy for cleaning, transformation, exploratory analysis and reproducible workflows."),
+                    ("Statistics, EDA & Business Insights", "Apply descriptive statistics, correlation, hypothesis testing basics and exploratory visualisation to turn data into defensible insights."),
+                    ("Power BI & Analytics Portfolio", "Build a professional Power BI dashboard, define KPIs, model data, publish insights and present an end-to-end portfolio project.")
+                }),
+            new CourseSeed(
                 "Machine Learning with Python",
                 "Develop practical machine learning skills from data preparation through model training, evaluation, interpretation, and deployment.",
                 CourseCategory.MachineLearning,
