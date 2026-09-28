@@ -1,40 +1,167 @@
 @model IEnumerable<OnlineLearningApp.Models.Course>
 
 @{
-    ViewData["Title"] = "Courses";
+    ViewData["Title"] = "Course Catalog";
 }
 
-<div class="container mt-4">
-    <h2 class="text-center mb-4">Courses</h2>
+<style>
+    .catalog-hero {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #2563eb 100%);
+        color: white;
+        border-radius: 24px;
+        padding: 48px 36px;
+        margin-bottom: 32px;
+    }
 
-    <!-- Search Bar -->
-    <div class="mb-4">
-        <form asp-action="Filter" method="get" class="form-inline d-flex justify-content-center">
-            <input type="text" name="searchString" class="form-control mr-2" placeholder="Search for a course..." />
-            <button type="submit" class="btn btn-primary">Search</button>
-        </form>
-    </div>
+    .catalog-hero h1 {
+        font-weight: 800;
+        letter-spacing: -0.03em;
+    }
 
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-        @foreach (var course in Model)
-        {
-            <div class="col">
-                <div class="card h-100">
-                    <img src="@course.ImageURL" class="card-img-top" alt="@course.CourseName">
-                    <div class="card-body">
-                        <h5 class="card-title">@course.CourseName</h5>
-                        <p class="card-text">@course.Description</p>
-                        <p><strong>Category:</strong> @course.Category</p>
-                        <p><strong>Start Date:</strong> @course.StartDate.ToString("dd MMM yy")</p>
-                        <p><strong>End Date:</strong> @course.EndDate.ToString("dd MMM yy")</p>
-                        <p><strong>Status:</strong> @course.Status</p>
-                    </div>
-                    <div class="card-footer d-flex justify-content-between">
-                        <a href="@Url.Action("Details", "Course", new { id = course.Id })" class="btn btn-primary">Show Details</a>
-                        <a href="#" class="btn btn-success">Enroll Now</a>
-                    </div>
-                </div>
+    .catalog-hero p {
+        max-width: 760px;
+        color: rgba(255,255,255,.82);
+        font-size: 1.05rem;
+    }
+
+    .course-card {
+        border: 0;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, .08);
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+    .course-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 18px 40px rgba(15, 23, 42, .14);
+    }
+
+    .course-image {
+        height: 190px;
+        background: linear-gradient(135deg, #dbeafe, #e0e7ff);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .course-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .course-fallback {
+        font-size: 3rem;
+        font-weight: 800;
+        color: #1d4ed8;
+        letter-spacing: .04em;
+    }
+
+    .course-title {
+        font-weight: 750;
+        line-height: 1.25;
+    }
+
+    .course-description {
+        color: #64748b;
+        min-height: 72px;
+    }
+
+    .category-badge {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border-radius: 999px;
+        padding: 5px 10px;
+        font-size: .78rem;
+        font-weight: 700;
+    }
+
+    .course-price {
+        font-size: 1.05rem;
+        font-weight: 800;
+    }
+</style>
+
+<div class="container py-4">
+    <section class="catalog-hero">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <span class="badge bg-light text-primary mb-3">LEARN • BUILD • ADVANCE</span>
+                <h1 class="display-5 mb-3">Future-ready courses for the digital economy</h1>
+                <p class="mb-0">
+                    Develop practical skills in AI, data, cybersecurity, cloud, software engineering,
+                    and creative programming through project-focused learning.
+                </p>
             </div>
-        }
+            <div class="col-lg-4">
+                <form asp-action="Filter" method="get" class="bg-white rounded-4 p-2 shadow">
+                    <div class="input-group">
+                        <input type="text" name="searchString" class="form-control border-0"
+                               placeholder="Search courses..." aria-label="Search courses" />
+                        <button type="submit" class="btn btn-primary rounded-3">Search</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h3 mb-1">Course Catalog</h2>
+            <p class="text-muted mb-0">@Model.Count() courses available</p>
+        </div>
     </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info rounded-4">
+            No courses matched your search. Try a different keyword.
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+            @foreach (var course in Model)
+            {
+                <div class="col">
+                    <article class="card course-card h-100">
+                        <div class="course-image">
+                            <img src="@course.ImageURL"
+                                 alt="@course.CourseName"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                            <div class="course-fallback" style="display:none;">
+                                @course.CourseName.Substring(0, Math.Min(2, course.CourseName.Length)).ToUpperInvariant()
+                            </div>
+                        </div>
+
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+                                <span class="category-badge">@course.Category</span>
+                                <span class="badge text-bg-light">@course.Status</span>
+                            </div>
+
+                            <h3 class="h5 course-title">@course.CourseName</h3>
+                            <p class="course-description">@course.Description</p>
+
+                            <div class="small text-muted mb-3">
+                                <span>@course.StartDate.ToString("dd MMM yyyy")</span>
+                                <span class="mx-1">•</span>
+                                <span>@course.EndDate.ToString("dd MMM yyyy")</span>
+                            </div>
+
+                            <div class="mt-auto d-flex justify-content-between align-items-center">
+                                <span class="course-price">₦@course.Price.ToString("N0")</span>
+                                <a asp-action="Details" asp-route-id="@course.Id"
+                                   class="btn btn-primary rounded-pill px-3">
+                                    View course
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            }
+        </div>
+    }
 </div>
