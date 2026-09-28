@@ -1,6 +1,10 @@
 @model OnlineLearningApp.Models.Course
 @{
     ViewData["Title"] = $"Learning · {Model.CourseName}";
+    var completedModuleIds = ViewBag.CompletedModuleIds as List<int> ?? new List<int>();
+    var completedModuleCount = ViewBag.CompletedModuleCount is int completed ? completed : 0;
+    var progressPercentage = ViewBag.ProgressPercentage is int progress ? progress : 0;
+    var isCourseCompleted = ViewBag.IsCourseCompleted is bool completedFlag && completedFlag;
 }
 <div class="container-fluid px-3 px-lg-4 py-4">
     <div class="row g-4">
@@ -24,6 +28,25 @@
                             <div class="lesson-panel">
                                 <div class="eyebrow mb-2">Lesson content</div>
                                 <p class="text-muted-custom mb-4">@module.Content</p>
+                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 p-3 rounded-3 border bg-light-subtle">
+                                    <div>
+                                        <strong>@(completedModuleIds.Contains(module.ModuleId) ? "Module completed" : "Ready to complete?")</strong>
+                                        <div class="small text-muted-custom mt-1">@(completedModuleIds.Contains(module.ModuleId) ? "Your progress has been saved." : "Mark this module complete after reviewing the lesson content.")</div>
+                                    </div>
+                                    @if (completedModuleIds.Contains(module.ModuleId))
+                                    {
+                                        <span class="badge rounded-pill bg-success-subtle text-success px-3 py-2"><i class="bi bi-check-circle me-1"></i> Completed</span>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="CompleteModule" method="post" class="m-0">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="courseId" value="@Model.Id" />
+                                            <input type="hidden" name="moduleId" value="@module.ModuleId" />
+                                            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-check2-circle me-1"></i> Mark complete</button>
+                                        </form>
+                                    }
+                                </div>
                                 @foreach (var quiz in module.Quizzes.OrderBy(q => q.QuizId)) {
                                     <div class="surface p-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
                                         <div><strong>@quiz.QuizName</strong><div class="small text-muted-custom mt-1">@quiz.Questions.Count question(s) · Check your understanding</div></div>
@@ -52,9 +75,9 @@
                 }
 
                 <div class="dashboard-card p-4 mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2"><strong>Course progress</strong><span class="small fw-bold text-primary">0%</span></div>
-                    <div class="progress mb-3"><div class="progress-bar" style="width:0%"></div></div>
-                    <div class="d-flex justify-content-between small text-muted-custom"><span>0 of @Model.Modules.Count modules</span><span>Keep going</span></div>
+                    <div class="d-flex justify-content-between align-items-center mb-2"><strong>Course progress</strong><span class="small fw-bold text-primary">@progressPercentage%</span></div>
+                    <div class="progress mb-3"><div class="progress-bar" style="width:@progressPercentage%"></div></div>
+                    <div class="d-flex justify-content-between small text-muted-custom"><span>@completedModuleCount of @Model.Modules.Count modules</span><span>@(isCourseCompleted ? "Completed" : "Keep going")</span></div>
                 </div>
                 <div class="dashboard-card p-4">
                     <div class="eyebrow">Course at a glance</div>
