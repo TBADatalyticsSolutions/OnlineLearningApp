@@ -173,7 +173,7 @@ public class AppInitializer
                 CourseCategory.DataScience,
                 65000m,
                 14,
-                "data-analytics-python-sql-powerbi.jpg",
+                "python-data-science.jpg",
                 new[]
                 {
                     ("Data Analytics Foundations & Excel", "Frame business questions, understand data types, clean spreadsheets, use formulas and pivot tables, and communicate findings clearly."),
