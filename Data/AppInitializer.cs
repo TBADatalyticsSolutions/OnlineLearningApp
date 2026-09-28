@@ -284,7 +284,7 @@ public class AppInitializer
 
                 // CourseId is a legacy duplicate key retained for compatibility with older code.
                 course.CourseId = course.Id;
-                context.SaveChanges();
+                await context.SaveChangesAsync();
             }
 
             await SeedModulesAndQuizAsync(context, course, item.Modules);
@@ -311,7 +311,7 @@ public class AppInitializer
                 };
 
                 context.Modules.Add(module);
-                context.SaveChanges();
+                await context.SaveChangesAsync();
             }
 
             var quizName = $"{moduleSeed.Name} Checkpoint";
@@ -330,7 +330,7 @@ public class AppInitializer
                 };
 
                 context.Quizzes.Add(quiz);
-                context.SaveChanges();
+                await context.SaveChangesAsync();
 
                 var question = new Question
                 {
@@ -340,7 +340,7 @@ public class AppInitializer
                 };
 
                 context.Questions.Add(question);
-                context.SaveChanges();
+                await context.SaveChangesAsync();
 
                 context.Options.AddRange(
                     new Option
@@ -362,7 +362,7 @@ public class AppInitializer
                         QuestionId = question.QuestionId
                     });
 
-                context.SaveChanges();
+                await context.SaveChangesAsync();
             }
         }
     }
