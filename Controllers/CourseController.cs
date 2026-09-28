@@ -99,6 +99,7 @@ public class CourseController : Controller
 
         var course = await _context.Courses
             .AsNoTracking()
+            .AsSplitQuery()
             .Include(c => c.Instructor)
             .Include(c => c.Modules.OrderBy(m => m.ModuleId))
                 .ThenInclude(m => m.Quizzes)
