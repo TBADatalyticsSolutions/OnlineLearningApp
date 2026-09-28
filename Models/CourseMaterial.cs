@@ -41,9 +41,8 @@ public class CourseMaterial
     [Required]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    [Required]
-    public string UploadedById { get; set; } = string.Empty;
+    public string? UploadedById { get; set; }
 
     [ForeignKey(nameof(UploadedById))]
-    public Account UploadedBy { get; set; } = default!;
+    public Account? UploadedBy { get; set; }
 }
