@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using OnlineLearningApp;
 using OnlineLearningApp.Data;
 using OnlineLearningApp.Data.Cart;
+using OnlineLearningApp.Data.Services;
+using OnlineLearningApp.Data.Services.Implementation;
 using OnlineLearningApp.Models;
 
 var builder = WebApplication.CreateBuilder(args);
