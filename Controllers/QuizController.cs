@@ -17,6 +17,7 @@ public class QuizController : Controller
     }
 
     [Authorize(Roles = UserRoles.Admin + "," + UserRoles.Instructor)]
+    [HttpGet]
     public async Task<IActionResult> Index()
     {
         var allQuizzes = await _context.Quizzes
@@ -28,7 +29,6 @@ public class QuizController : Controller
         return View(allQuizzes);
     }
 
-    [Authorize(Roles = UserRoles.Student)]
     [Authorize(Roles = UserRoles.Student)]
     [HttpGet]
     public async Task<IActionResult> History()
@@ -61,6 +61,8 @@ public class QuizController : Controller
         return View(new QuizHistoryViewModel { Attempts = attempts });
     }
 
+    [Authorize(Roles = UserRoles.Student)]
+    [HttpGet]
     public async Task<IActionResult> Take(int id)
     {
         var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -77,7 +79,7 @@ public class QuizController : Controller
                 .ThenInclude(q => q.Options)
             .FirstOrDefaultAsync(q => q.QuizId == id);
 
-        if (quiz == null)
+        if (quiz is null)
         {
             return NotFound();
         }
@@ -98,7 +100,7 @@ public class QuizController : Controller
             .FirstOrDefaultAsync();
 
         var viewModel = BuildViewModel(quiz);
-        if (latestAttempt != null)
+        if (latestAttempt is not null)
         {
             viewModel.LastScore = latestAttempt.Score;
             viewModel.LastTotalQuestions = latestAttempt.TotalQuestions;
@@ -128,7 +130,7 @@ public class QuizController : Controller
                 .ThenInclude(q => q.Options)
             .FirstOrDefaultAsync(q => q.QuizId == model.QuizId);
 
-        if (quiz == null)
+        if (quiz is null)
         {
             return NotFound();
         }
@@ -158,7 +160,9 @@ public class QuizController : Controller
         }
 
         var totalQuestions = quiz.Questions.Count;
-        var percentage = totalQuestions == 0 ? 0 : Math.Round(score * 100m / totalQuestions, 2);
+        var percentage = totalQuestions == 0
+            ? 0m
+            : Math.Round(score * 100m / totalQuestions, 2);
         var passed = totalQuestions > 0 && percentage >= quiz.PassMark;
         var attemptedAt = DateTime.UtcNow;
 

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using OnlineLearningApp.Data;
 using OnlineLearningApp.Models;
 
@@ -15,42 +15,45 @@ public class CourseService : EntityBaseRepository<Course>, ICourseService
 
     public async Task AddNewCourseAsync(NewCourseViewModel data)
     {
-        var newCourse = new Course()
+        var newCourse = new Course
         {
-            CourseName = data.CourseName,
-            Description = data.Description,
+            CourseName = data.CourseName.Trim(),
+            Description = data.Description.Trim(),
             Price = data.Price,
-            ImageURL = data.ImageURL,
+            ImageURL = data.ImageURL.Trim(),
             Category = data.Category,
             StartDate = data.StartDate,
             EndDate = data.EndDate,
             Status = data.Status,
             InstructorId = data.InstructorId
         };
+
         await _context.Courses.AddAsync(newCourse);
         await _context.SaveChangesAsync();
 
-        // Add Course Modules
-        foreach (var moduleId in data.ModuleIds)
+        // CourseId is a legacy duplicate key retained for compatibility with older code.
+        newCourse.CourseId = newCourse.Id;
+
+        foreach (var moduleId in data.ModuleIds.Distinct())
         {
-            var newCourseModule = new Course_Module()
+            _context.Courses_Modules.Add(new Course_Module
             {
                 CourseId = newCourse.Id,
                 ModuleId = moduleId
-            };
-            await _context.Courses_Modules.AddAsync(newCourseModule);
+            });
         }
+
         await _context.SaveChangesAsync();
     }
 
     public async Task<Course?> GetCourseByIdAsync(int id)
     {
-        var courseDetails = await _context.Courses
-            .Include(i => i.Instructor)
-            .Include(cm => cm.Courses_Modules).ThenInclude(m => m.Module)
-            .FirstOrDefaultAsync(n => n.Id == id);
-
-        return courseDetails;
+        return await _context.Courses
+            .AsNoTracking()
+            .Include(c => c.Instructor)
+            .Include(c => c.Courses_Modules)
+                .ThenInclude(cm => cm.Module)
+            .FirstOrDefaultAsync(c => c.Id == id);
     }
 
     public async Task<NewCourseDropdownViewModel> GetNewCourseDropdownsValues()
@@ -71,52 +74,51 @@ public class CourseService : EntityBaseRepository<Course>, ICourseService
             })
             .ToListAsync();
 
-        var categories = Enum.GetValues(typeof(CourseCategory))
-                        .Cast<CourseCategory>()
-                        .Select(c => c.GetDescription()) // Convert to string descriptions
-                        .ToList();
+        var categories = Enum.GetValues<CourseCategory>()
+            .OrderBy(c => c)
+            .ToList();
 
-        var response = new NewCourseDropdownViewModel
+        return new NewCourseDropdownViewModel
         {
             Instructors = instructors,
             Categories = categories
         };
-        return response;
     }
 
     public async Task UpdateCourseAsync(NewCourseViewModel data)
     {
-        var dbCourse = await _context.Courses.FirstOrDefaultAsync(n => n.Id == data.Id);
-
-        if (dbCourse != null)
+        var dbCourse = await _context.Courses.FirstOrDefaultAsync(c => c.Id == data.Id);
+        if (dbCourse is null)
         {
-            dbCourse.CourseName = data.CourseName;
-            dbCourse.Description = data.Description;
-            dbCourse.Price = data.Price;
-            dbCourse.ImageURL = data.ImageURL;
-            dbCourse.Category = data.Category;
-            dbCourse.StartDate = data.StartDate;
-            dbCourse.EndDate = data.EndDate;
-            dbCourse.Status = data.Status;
-            dbCourse.InstructorId = data.InstructorId;
-            await _context.SaveChangesAsync();
+            throw new KeyNotFoundException($"Course with id {data.Id} was not found.");
         }
 
-        // Remove existing modules
-        var existingModulesDb = _context.Courses_Modules.Where(n => n.CourseId == data.Id).ToList();
-        _context.Courses_Modules.RemoveRange(existingModulesDb);
-        await _context.SaveChangesAsync();
+        dbCourse.CourseName = data.CourseName.Trim();
+        dbCourse.Description = data.Description.Trim();
+        dbCourse.Price = data.Price;
+        dbCourse.ImageURL = data.ImageURL.Trim();
+        dbCourse.Category = data.Category;
+        dbCourse.StartDate = data.StartDate;
+        dbCourse.EndDate = data.EndDate;
+        dbCourse.Status = data.Status;
+        dbCourse.InstructorId = data.InstructorId;
+        dbCourse.CourseId = dbCourse.Id;
 
-        // Add Course Modules
-        foreach (var moduleId in data.ModuleIds)
+        var existingModules = await _context.Courses_Modules
+            .Where(cm => cm.CourseId == data.Id)
+            .ToListAsync();
+
+        _context.Courses_Modules.RemoveRange(existingModules);
+
+        foreach (var moduleId in data.ModuleIds.Distinct())
         {
-            var newCourseModule = new Course_Module()
+            _context.Courses_Modules.Add(new Course_Module
             {
                 CourseId = data.Id,
                 ModuleId = moduleId
-            };
-            await _context.Courses_Modules.AddAsync(newCourseModule);
+            });
         }
+
         await _context.SaveChangesAsync();
     }
 }

@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OnlineLearningApp.Data;
 using OnlineLearningApp.Models;
-using System.Diagnostics;
 
 namespace OnlineLearningApp.Controllers;
 
@@ -15,123 +14,137 @@ public class AccountController : Controller
     private readonly SignInManager<Account> _signInManager;
     private readonly OnlineLearningAppDbContext _context;
 
-    public AccountController(UserManager<Account> userManager, SignInManager<Account> signInManager, OnlineLearningAppDbContext context)
+    public AccountController(
+        UserManager<Account> userManager,
+        SignInManager<Account> signInManager,
+        OnlineLearningAppDbContext context)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _context = context;
     }
 
-    // Administrative user directory.
     [Authorize(Roles = UserRoles.Admin)]
     public async Task<IActionResult> Users()
     {
-        var users = await _context.Accounts.ToListAsync();
+        var users = await _context.Accounts
+            .AsNoTracking()
+            .OrderBy(u => u.FullName)
+            .ToListAsync();
+
         return View(users);
     }
 
-    // Login View
     [AllowAnonymous]
     public IActionResult SignIn() => View(new LoginViewModel());
 
-    // Login POST action
     [HttpPost]
     [ValidateAntiForgeryToken]
     [AllowAnonymous]
     public async Task<IActionResult> SignIn(LoginViewModel loginVM)
     {
-        if (!ModelState.IsValid) return View(loginVM);
-
-        // Check if user exists by UserName
-        var user = await _userManager.FindByEmailAsync(loginVM.Email);
-        if (user == null)
+        if (!ModelState.IsValid)
         {
-            TempData["Error"] = "User not found. Please, try again!";
             return View(loginVM);
         }
 
-        // Attempt to sign in using the email (assuming username is the email)
-        var result = await _signInManager.PasswordSignInAsync(user, loginVM.Password, loginVM.RememberMe, lockoutOnFailure: true);
+        var user = await _userManager.FindByEmailAsync(loginVM.Email);
+        if (user is null)
+        {
+            TempData["Error"] = "Invalid email or password.";
+            return View(loginVM);
+        }
+
+        var result = await _signInManager.PasswordSignInAsync(
+            user,
+            loginVM.Password,
+            loginVM.RememberMe,
+            lockoutOnFailure: true);
+
         if (result.Succeeded)
         {
-            // Redirect based on user role
-            if (await _userManager.IsInRoleAsync(user, "Admin"))
+            if (await _userManager.IsInRoleAsync(user, UserRoles.Admin))
             {
                 return RedirectToAction("Index", "Course");
             }
-            else if (await _userManager.IsInRoleAsync(user, "Instructor"))
+
+            if (await _userManager.IsInRoleAsync(user, UserRoles.Instructor))
             {
-                return RedirectToAction("Index", "Learning");
+                return RedirectToAction("Index", "Instructor");
             }
-            else if (await _userManager.IsInRoleAsync(user, "Student"))
+
+            if (await _userManager.IsInRoleAsync(user, UserRoles.Student))
             {
                 return RedirectToAction("Index", "Learning");
             }
         }
-        else
-        {
-            TempData["Error"] = "Wrong credentials. Please, try again!";
-            Debug.WriteLine($"Login failed for user {loginVM.Email}. Result: {result}");
-        }
+
+        TempData["Error"] = result.IsLockedOut
+            ? "Your account is temporarily locked. Please try again later."
+            : "Invalid email or password.";
 
         return View(loginVM);
     }
 
-    // Register View
     [AllowAnonymous]
     public IActionResult Register() => View(new RegisterViewModel());
 
-    // Register POST action
     [HttpPost]
     [ValidateAntiForgeryToken]
     [AllowAnonymous]
     public async Task<IActionResult> Register(RegisterViewModel registerVM)
     {
-        if (!ModelState.IsValid) return View(registerVM);
-
-        // Check if email is already registered
-        var user = await _userManager.FindByEmailAsync(registerVM.EmailAddress);
-        if (user != null)
+        if (!ModelState.IsValid)
         {
-            TempData["Error"] = "This email address is already in use";
             return View(registerVM);
         }
 
-        var newUser = new Account()
+        var normalizedEmail = registerVM.EmailAddress.Trim();
+        var existingUser = await _userManager.FindByEmailAsync(normalizedEmail);
+
+        if (existingUser is not null)
         {
-            FullName = registerVM.FullName,
-            Email = registerVM.EmailAddress,
-            UserName = registerVM.EmailAddress,
+            ModelState.AddModelError(nameof(registerVM.EmailAddress), "This email address is already registered.");
+            return View(registerVM);
+        }
+
+        var newUser = new Account
+        {
+            FullName = registerVM.FullName.Trim(),
+            Email = normalizedEmail,
+            UserName = normalizedEmail,
             Role = UserRoles.Student,
             EmailConfirmed = false
         };
-        var newUserResponse = await _userManager.CreateAsync(newUser, registerVM.Password);
 
-        if (newUserResponse.Succeeded)
+        var createResult = await _userManager.CreateAsync(newUser, registerVM.Password);
+        if (!createResult.Succeeded)
         {
-            var roleResult = await _userManager.AddToRoleAsync(newUser, UserRoles.Student);
-            if (!roleResult.Succeeded)
+            foreach (var error in createResult.Errors)
             {
-                foreach (var error in roleResult.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
-                return View(registerVM);
+                ModelState.AddModelError(string.Empty, error.Description);
             }
 
-            await _signInManager.SignInAsync(newUser, isPersistent: false);
-            return RedirectToAction("RegisterCompleted");
+            return View(registerVM);
         }
 
-        foreach (var error in newUserResponse.Errors)
+        var roleResult = await _userManager.AddToRoleAsync(newUser, UserRoles.Student);
+        if (!roleResult.Succeeded)
         {
-            ModelState.AddModelError(string.Empty, error.Description);
+            await _userManager.DeleteAsync(newUser);
+
+            foreach (var error in roleResult.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+
+            return View(registerVM);
         }
 
-        return View(registerVM);
+        await _signInManager.SignInAsync(newUser, isPersistent: false);
+        return RedirectToAction(nameof(RegisterCompleted));
     }
 
-    // Logout POST action
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize]
@@ -141,9 +154,9 @@ public class AccountController : Controller
         return RedirectToAction("Index", "Course");
     }
 
-    // Registration completed view
+    [AllowAnonymous]
     public IActionResult RegisterCompleted() => View();
 
-    // Access denied view
+    [AllowAnonymous]
     public IActionResult AccessDenied() => View();
 }

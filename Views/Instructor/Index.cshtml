@@ -1,0 +1,51 @@
+@model OnlineLearningApp.Models.InstructorDashboardViewModel
+@{
+    ViewData["Title"] = "Instructor Dashboard";
+}
+<div class="container-fluid px-3 px-lg-4 py-4 py-lg-5">
+    <div class="catalog-hero mb-4">
+        <div class="eyebrow" style="color:#7fc0ff;">Instructor workspace</div>
+        <h1 class="display-6 fw-bold mt-2">Teach, manage and monitor your courses.</h1>
+        <p class="lead mb-0" style="color:#cfe1f7;">A focused view of the learning content assigned to you.</p>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3"><div class="dashboard-card p-4 h-100"><div class="stat-icon mb-2"><i class="bi bi-journal-bookmark"></i></div><strong class="fs-3">@Model.CourseCount</strong><div class="small text-muted-custom">Courses</div></div></div>
+        <div class="col-sm-6 col-xl-3"><div class="dashboard-card p-4 h-100"><div class="stat-icon mb-2"><i class="bi bi-collection"></i></div><strong class="fs-3">@Model.ModuleCount</strong><div class="small text-muted-custom">Modules</div></div></div>
+        <div class="col-sm-6 col-xl-3"><div class="dashboard-card p-4 h-100"><div class="stat-icon mb-2"><i class="bi bi-ui-checks"></i></div><strong class="fs-3">@Model.QuizCount</strong><div class="small text-muted-custom">Checkpoints</div></div></div>
+        <div class="col-sm-6 col-xl-3"><div class="dashboard-card p-4 h-100"><div class="stat-icon mb-2"><i class="bi bi-people"></i></div><strong class="fs-3">@Model.StudentCount</strong><div class="small text-muted-custom">Enrollments</div></div></div>
+    </div>
+
+    @if (!Model.Courses.Any())
+    {
+        <div class="empty-state">
+            <i class="bi bi-journal-x display-4 text-primary"></i>
+            <h2 class="h4 fw-bold mt-3">No courses assigned yet</h2>
+            <p class="text-muted-custom">An administrator can assign courses to your instructor account.</p>
+        </div>
+    }
+    else
+    {
+        <div class="surface p-0 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead><tr><th class="px-4 py-3">Course</th><th>Category</th><th>Status</th><th>Modules</th><th>Checkpoints</th><th>Students</th><th class="px-4"></th></tr></thead>
+                    <tbody>
+                    @foreach (var course in Model.Courses)
+                    {
+                        <tr>
+                            <td class="px-4 fw-semibold">@course.CourseName</td>
+                            <td><span class="category-badge">@course.Category</span></td>
+                            <td>@course.Status</td>
+                            <td>@course.ModuleCount</td>
+                            <td>@course.QuizCount</td>
+                            <td>@course.StudentCount</td>
+                            <td class="px-4 text-end"><a asp-controller="Course" asp-action="Details" asp-route-id="@course.CourseId" class="btn btn-soft btn-sm">View course</a></td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
