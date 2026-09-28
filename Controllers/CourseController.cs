@@ -303,6 +303,7 @@ public class CourseController : Controller
             EndDate = courseDetails.EndDate,
             ImageURL = courseDetails.ImageURL,
             Category = courseDetails.Category,
+            Status = courseDetails.Status,
             InstructorId = courseDetails.InstructorId,
             ModuleIds = courseDetails.Courses_Modules.Select(n => n.ModuleId).ToList(),
         };
