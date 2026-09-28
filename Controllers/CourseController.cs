@@ -11,11 +11,13 @@ namespace OnlineLearningApp.Controllers;
 public class CourseController : Controller
 {
     private readonly ICourseService _service;
+    private readonly ICourseCompletionService _completionService;
     private readonly OnlineLearningAppDbContext _context;
 
     public CourseController(ICourseService service, OnlineLearningAppDbContext context)
     {
         _service = service;
+        _completionService = completionService;
         _context = context;
     }
 
