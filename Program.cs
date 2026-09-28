@@ -60,6 +60,7 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IOptionService, OptionService>();
 builder.Services.AddScoped<IQuestionService, QuestionService>();
 builder.Services.AddScoped<IQuizService, QuizService>();
+builder.Services.AddScoped<ICourseCompletionService, CourseCompletionService>();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ShoppingCart>(sp => ShoppingCart.GetShoppingCart(sp));
