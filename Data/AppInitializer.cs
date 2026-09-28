@@ -6,65 +6,114 @@ namespace OnlineLearningApp.Data;
 
 public class AppInitializer
 {
-    public static void Initialize(IServiceProvider serviceProvider)
+    public static async Task InitializeAsync(IServiceProvider serviceProvider)
     {
-        using var context = new OnlineLearningAppDbContext(
-            serviceProvider.GetRequiredService<DbContextOptions<OnlineLearningAppDbContext>>());
+        using var scope = serviceProvider.CreateScope();
 
-        SeedAccounts(context);
+        var context = scope.ServiceProvider.GetRequiredService<OnlineLearningAppDbContext>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<Account>>();
+        var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<AppInitializer>>();
+
+        foreach (var roleName in new[] { UserRoles.Admin, UserRoles.Instructor, UserRoles.Student })
+        {
+            if (!await roleManager.RoleExistsAsync(roleName))
+            {
+                var result = await roleManager.CreateAsync(new IdentityRole(roleName));
+                if (!result.Succeeded)
+                {
+                    throw new InvalidOperationException(
+                        $"Unable to create role '{roleName}': {string.Join("; ", result.Errors.Select(e => e.Description))}");
+                }
+            }
+        }
+
+        await SeedAccountAsync(
+            userManager,
+            configuration["SeedAccounts:AdminPassword"],
+            "admin",
+            "admin@example.com",
+            "Administrator",
+            UserRoles.Admin,
+            logger);
+
+        await SeedAccountAsync(
+            userManager,
+            configuration["SeedAccounts:InstructorPassword"],
+            "Instructor1",
+            "instructor1@example.com",
+            "Lead Instructor",
+            UserRoles.Instructor,
+            logger);
+
+        await SeedAccountAsync(
+            userManager,
+            configuration["SeedAccounts:StudentPassword"],
+            "student1",
+            "student1@example.com",
+            "Demo Student",
+            UserRoles.Student,
+            logger);
+
         SeedModernCourseCatalog(context);
     }
 
-    private static void SeedAccounts(OnlineLearningAppDbContext context)
+    private static async Task SeedAccountAsync(
+        UserManager<Account> userManager,
+        string? password,
+        string userName,
+        string email,
+        string fullName,
+        string role,
+        ILogger logger)
     {
-        var hasher = new PasswordHasher<Account>();
+        var user = await userManager.FindByNameAsync(userName);
 
-        var admin = context.Accounts.FirstOrDefault(a => a.UserName == "admin");
-        if (admin is null)
+        if (user is null)
         {
-            admin = new Account
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                logger.LogWarning(
+                    "Seed account {UserName} was not created because SeedAccounts:{Role}Password is not configured.",
+                    userName,
+                    role);
+                return;
+            }
+
+            user = new Account
             {
                 Id = Guid.NewGuid().ToString(),
-                UserName = "admin",
-                FullName = "Administrator",
-                Email = "admin@example.com",
-                Role = UserRoles.Admin
+                UserName = userName,
+                FullName = fullName,
+                Email = email,
+                EmailConfirmed = true,
+                Role = role
             };
-            admin.PasswordHash = hasher.HashPassword(admin, "admin123");
-            context.Accounts.Add(admin);
-        }
 
-        var instructor = context.Accounts.FirstOrDefault(a => a.UserName == "Instructor1");
-        if (instructor is null)
-        {
-            instructor = new Account
+            var result = await userManager.CreateAsync(user, password);
+            if (!result.Succeeded)
             {
-                Id = Guid.NewGuid().ToString(),
-                UserName = "Instructor1",
-                FullName = "Lead Instructor",
-                Email = "instructor1@example.com",
-                Role = UserRoles.Instructor
-            };
-            instructor.PasswordHash = hasher.HashPassword(instructor, "instructor123");
-            context.Accounts.Add(instructor);
+                throw new InvalidOperationException(
+                    $"Unable to create seed account '{userName}': {string.Join("; ", result.Errors.Select(e => e.Description))}");
+            }
         }
 
-        var student = context.Accounts.FirstOrDefault(a => a.UserName == "student1");
-        if (student is null)
+        if (!await userManager.IsInRoleAsync(user, role))
         {
-            student = new Account
+            var roleResult = await userManager.AddToRoleAsync(user, role);
+            if (!roleResult.Succeeded)
             {
-                Id = Guid.NewGuid().ToString(),
-                UserName = "student1",
-                FullName = "Demo Student",
-                Email = "student1@example.com",
-                Role = UserRoles.Student
-            };
-            student.PasswordHash = hasher.HashPassword(student, "student123");
-            context.Accounts.Add(student);
+                throw new InvalidOperationException(
+                    $"Unable to assign role '{role}' to '{userName}': {string.Join("; ", roleResult.Errors.Select(e => e.Description))}");
+            }
         }
 
-        context.SaveChanges();
+        if (!string.Equals(user.Role, role, StringComparison.Ordinal))
+        {
+            user.Role = role;
+            await userManager.UpdateAsync(user);
+        }
     }
 
     private static void SeedModernCourseCatalog(OnlineLearningAppDbContext context)
