@@ -7,6 +7,7 @@ public class QuizAttemptViewModel
     public string Description { get; set; } = string.Empty;
     public int CourseId { get; set; }
     public string CourseName { get; set; } = string.Empty;
+    public decimal PassMark { get; set; } = 70m;
     public List<QuizQuestionViewModel> Questions { get; set; } = new();
     public Dictionary<int, int> Answers { get; set; } = new();
     public int Score { get; set; }
