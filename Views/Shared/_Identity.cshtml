@@ -5,7 +5,7 @@
 
 @if (User?.Identity?.IsAuthenticated != true)
 {
-    <a class="btn btn-outline-success my-2 my-sm-0" asp-controller="Account" asp-action="Login">
+    <a class="btn btn-outline-success my-2 my-sm-0" asp-controller="Account" asp-action="SignIn">
         <i class="bi bi-box-arrow-in-right"></i> Log in
     </a>
     <span style="padding: 5px;"></span>
@@ -19,7 +19,7 @@ else
     var userName = UserManager.GetUserName(User!);
 
     <div class="dropdown">
-        <button class="btn btn-outline-success dropdown-toggle" type="button" id="profile-btn" data-toggle="dropdown"
+        <button class="btn btn-outline-success dropdown-toggle" type="button" id="profile-btn" data-bs-toggle="dropdown"
                 aria-expanded="false">
             <i class="bi bi-person-badge"></i> Hello @userName
         </button>
@@ -41,7 +41,7 @@ else
         </ul>
     </div>
     <span style="padding: 5px;"></span>
-    <form asp-controller="Account" asp-action="Logout">
+    <form asp-controller="Account" asp-action="Logout" method="post">
         <button class="btn btn-outline-danger my-2 my-sm-0">
             <i class="bi bi-box-arrow-in-right"></i> Log out
         </button>
