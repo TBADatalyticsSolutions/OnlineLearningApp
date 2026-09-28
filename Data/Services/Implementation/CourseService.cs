@@ -25,7 +25,8 @@ public class CourseService : EntityBaseRepository<Course>, ICourseService
             StartDate = data.StartDate,
             EndDate = data.EndDate,
             Status = data.Status,
-            InstructorId = data.InstructorId
+            InstructorId = data.InstructorId,
+            RequireAllQuizzesPassed = data.RequireAllQuizzesPassed
         };
 
         await _context.Courses.AddAsync(newCourse);
@@ -111,6 +112,7 @@ public class CourseService : EntityBaseRepository<Course>, ICourseService
         dbCourse.EndDate = data.EndDate;
         dbCourse.Status = data.Status;
         dbCourse.InstructorId = data.InstructorId;
+        dbCourse.RequireAllQuizzesPassed = data.RequireAllQuizzesPassed;
         dbCourse.CourseId = dbCourse.Id;
 
         var existingModules = await _context.Courses_Modules
