@@ -93,12 +93,21 @@ public class AccountController : Controller
     [AllowAnonymous]
     public async Task<IActionResult> Register(RegisterViewModel registerVM)
     {
+        if (!registerVM.AcceptTerms)
+        {
+            ModelState.AddModelError(nameof(registerVM.AcceptTerms),
+                "You must accept the Terms and Privacy Policy to create an account.");
+        }
+
+        registerVM.FullName = registerVM.FullName?.Trim() ?? string.Empty;
+        registerVM.EmailAddress = registerVM.EmailAddress?.Trim() ?? string.Empty;
+
         if (!ModelState.IsValid)
         {
             return View(registerVM);
         }
 
-        var normalizedEmail = registerVM.EmailAddress.Trim();
+        var normalizedEmail = registerVM.EmailAddress;
         var existingUser = await _userManager.FindByEmailAsync(normalizedEmail);
 
         if (existingUser is not null)
