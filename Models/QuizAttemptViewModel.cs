@@ -34,11 +34,3 @@ public class QuizOptionViewModel
     public string OptionText { get; set; } = string.Empty;
     public bool IsCorrect { get; set; }
 }
-
-public class QuizQuestionViewModel
-{
-    public int QuestionId { get; set; }
-    public string QuestionText { get; set; } = string.Empty;
-    public List<QuizOptionViewModel> Options { get; set; } = new();
-    public int? CorrectOptionId { get; set; }
-}
