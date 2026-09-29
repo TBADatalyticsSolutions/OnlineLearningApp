@@ -1,25 +1,75 @@
 @model RegisterViewModel
 @{
-    ViewData["Title"] = "Create account";
+    ViewData["Title"] = "Create your learner account";
 }
 <div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-6">
-            <div class="surface p-4 p-lg-5">
-                <div class="eyebrow">Start learning</div>
-                <h1 class="h2 fw-bold mt-2">Create your learner account</h1>
-                <p class="text-muted-custom">Registration creates a Student account. Administrative roles are assigned separately.</p>
-                <form asp-action="Register" method="post" class="mt-4">
+    <div class="row justify-content-center align-items-center g-5">
+        <div class="col-lg-5">
+            <div class="eyebrow">Start learning</div>
+            <h1 class="display-6 fw-bold mt-2">Build your learning journey.</h1>
+            <p class="lead text-muted-custom">Create your free learner account and access practical courses, checkpoint assessments, learning materials and certificates.</p>
+            <div class="d-flex flex-column gap-3 mt-4">
+                <div class="d-flex gap-3"><i class="bi bi-mortarboard-fill text-primary fs-4"></i><div><strong>Learn at your pace</strong><div class="small text-muted-custom">Work through structured modules and practical resources.</div></div></div>
+                <div class="d-flex gap-3"><i class="bi bi-check2-circle text-primary fs-4"></i><div><strong>Track your progress</strong><div class="small text-muted-custom">Use checkpoint assessments to measure your understanding.</div></div></div>
+                <div class="d-flex gap-3"><i class="bi bi-award-fill text-primary fs-4"></i><div><strong>Earn certificates</strong><div class="small text-muted-custom">Complete eligible courses and access your certificate.</div></div></div>
+            </div>
+        </div>
+        <div class="col-lg-6 col-xl-5">
+            <div class="surface p-4 p-lg-5 shadow-sm">
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div><div class="eyebrow">Learner registration</div><h2 class="h3 fw-bold mt-2 mb-1">Create your account</h2><p class="small text-muted-custom mb-0">It takes less than a minute.</p></div>
+                    <span class="badge rounded-pill text-bg-light border"><i class="bi bi-shield-check me-1"></i> Secure</span>
+                </div>
+                <form asp-action="Register" method="post">
                     <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3"></div>
-                    <div class="mb-3"><label asp-for="FullName" class="form-label"></label><input asp-for="FullName" class="form-control form-control-lg" autocomplete="name" /><span asp-validation-for="FullName" class="text-danger small"></span></div>
-                    <div class="mb-3"><label asp-for="EmailAddress" class="form-label"></label><input asp-for="EmailAddress" class="form-control form-control-lg" autocomplete="email" /><span asp-validation-for="EmailAddress" class="text-danger small"></span></div>
-                    <div class="mb-3"><label asp-for="Password" class="form-label"></label><input asp-for="Password" class="form-control form-control-lg" autocomplete="new-password" /><span asp-validation-for="Password" class="text-danger small"></span></div>
-                    <div class="mb-4"><label asp-for="ConfirmPassword" class="form-label"></label><input asp-for="ConfirmPassword" class="form-control form-control-lg" autocomplete="new-password" /><span asp-validation-for="ConfirmPassword" class="text-danger small"></span></div>
-                    <button class="btn btn-primary btn-lg w-100" type="submit">Create account <i class="bi bi-arrow-right ms-1"></i></button>
+                    <div class="mb-3"><label asp-for="FullName" class="form-label fw-semibold"></label><input asp-for="FullName" class="form-control form-control-lg" autocomplete="name" placeholder="Your full name" autofocus /><span asp-validation-for="FullName" class="text-danger small"></span></div>
+                    <div class="mb-3"><label asp-for="EmailAddress" class="form-label fw-semibold"></label><input asp-for="EmailAddress" class="form-control form-control-lg" autocomplete="email" inputmode="email" placeholder="you@example.com" /><span asp-validation-for="EmailAddress" class="text-danger small"></span></div>
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label fw-semibold"></label>
+                        <div class="input-group input-group-lg"><input asp-for="Password" class="form-control" autocomplete="new-password" id="registerPassword" placeholder="Create a strong password" /><button type="button" class="btn btn-outline-secondary" id="togglePassword" aria-label="Show password"><i class="bi bi-eye"></i></button></div>
+                        <div class="progress mt-2" style="height:6px;"><div id="passwordStrength" class="progress-bar" style="width:0%"></div></div>
+                        <div id="passwordHint" class="form-text">Use 8+ characters with uppercase, lowercase, a number and a special character.</div>
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3"><label asp-for="ConfirmPassword" class="form-label fw-semibold"></label><div class="input-group input-group-lg"><input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" placeholder="Repeat your password" /><button type="button" class="btn btn-outline-secondary" id="toggleConfirmPassword" aria-label="Show password"><i class="bi bi-eye"></i></button></div><span asp-validation-for="ConfirmPassword" class="text-danger small"></span></div>
+                    <div class="form-check mb-4"><input asp-for="AcceptTerms" class="form-check-input" /><label asp-for="AcceptTerms" class="form-check-label small">I agree to the <a asp-controller="Home" asp-action="Privacy" target="_blank" rel="noopener">Terms and Privacy Policy</a>.</label><div><span asp-validation-for="AcceptTerms" class="text-danger small"></span></div></div>
+                    <button class="btn btn-primary btn-lg w-100" type="submit"><i class="bi bi-person-plus me-1"></i> Create learner account</button>
                 </form>
-                <p class="small text-center text-muted-custom mt-4 mb-0">Already registered? <a asp-action="SignIn">Sign in</a>.</p>
+                <div class="text-center mt-4 pt-3 border-top"><span class="small text-muted-custom">Already have an account?</span> <a asp-action="SignIn" class="fw-semibold">Sign in</a></div>
             </div>
         </div>
     </div>
 </div>
-@section Scripts { <partial name="_ValidationScriptsPartial" /> }
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const password = document.getElementById('registerPassword');
+            const strength = document.getElementById('passwordStrength');
+            const hint = document.getElementById('passwordHint');
+            const toggle = (inputId, buttonId) => {
+                const input = document.getElementById(inputId);
+                const button = document.getElementById(buttonId);
+                button?.addEventListener('click', () => {
+                    const visible = input.type === 'text';
+                    input.type = visible ? 'password' : 'text';
+                    button.innerHTML = visible ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
+                    button.setAttribute('aria-label', visible ? 'Show password' : 'Hide password');
+                });
+            };
+            toggle('registerPassword', 'togglePassword');
+            toggle('ConfirmPassword', 'toggleConfirmPassword');
+            password?.addEventListener('input', () => {
+                const value = password.value;
+                let score = 0;
+                if (value.length >= 8) score++;
+                if (/[a-z]/.test(value)) score++;
+                if (/[A-Z]/.test(value)) score++;
+                if (/[0-9]/.test(value)) score++;
+                if (/[^A-Za-z0-9]/.test(value)) score++;
+                strength.style.width = (score * 20) + '%';
+                hint.textContent = score < 3 ? 'Weak password — add length and character variety.' : score < 5 ? 'Good password — add the remaining requirements for stronger protection.' : 'Strong password — all recommended requirements are met.';
+            });
+        })();
+    </script>
+}
