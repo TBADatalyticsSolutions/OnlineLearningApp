@@ -19,6 +19,10 @@ public class RegisterViewModel
     public string Password { get; set; } = string.Empty;
 
     [Required]
+    [Display(Name = "I agree to the Terms and Privacy Policy")]
+    public bool AcceptTerms { get; set; }
+
+    [Required]
     [DataType(DataType.Password)]
     [Display(Name = "Confirm password")]
     [Compare(nameof(Password), ErrorMessage = "The password and confirmation password do not match.")]
