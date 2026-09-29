@@ -145,9 +145,23 @@ public class QuizController : Controller
         }
 
         var answers = model.Answers ?? new Dictionary<int, int>();
+        var selectedIds = model.SelectedQuestionIds
+            .Distinct()
+            .ToHashSet();
+
+        var selectedQuestions = quiz.Questions
+            .Where(q => selectedIds.Contains(q.QuestionId))
+            .ToList();
+
+        if (selectedQuestions.Count == 0)
+        {
+            TempData["Error"] = "Please answer the questions shown in the assessment.";
+            return RedirectToAction(nameof(Take), new { id = quiz.QuizId });
+        }
+
         var score = 0;
 
-        foreach (var question in quiz.Questions)
+        foreach (var question in selectedQuestions)
         {
             if (answers.TryGetValue(question.QuestionId, out var selectedOptionId))
             {
@@ -159,7 +173,7 @@ public class QuizController : Controller
             }
         }
 
-        var totalQuestions = quiz.Questions.Count;
+        var totalQuestions = selectedQuestions.Count;
         var percentage = totalQuestions == 0
             ? 0m
             : Math.Round(score * 100m / totalQuestions, 2);
@@ -181,6 +195,7 @@ public class QuizController : Controller
 
         var result = BuildViewModel(quiz);
         result.Answers = answers;
+        result.SelectedQuestionIds = selectedQuestions.Select(q => q.QuestionId).ToList();
         result.Submitted = true;
         result.Score = score;
         result.TotalQuestions = totalQuestions;
@@ -204,14 +219,14 @@ public class QuizController : Controller
             PassMark = quiz.PassMark,
             TotalQuestions = quiz.Questions.Count,
             Questions = quiz.Questions
-                .OrderBy(q => q.QuestionId)
+                .OrderBy(q => Random.Shared.Next())
                 .Select(q => new QuizQuestionViewModel
                 {
                     QuestionId = q.QuestionId,
                     QuestionText = q.QuestionText,
                     CorrectOptionId = q.Options.FirstOrDefault(o => o.IsCorrect)?.OptionId,
                     Options = q.Options
-                        .OrderBy(o => o.OptionId)
+                        .OrderBy(o => Random.Shared.Next())
                         .Select(o => new QuizOptionViewModel
                         {
                             OptionId = o.OptionId,
