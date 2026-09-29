@@ -56,7 +56,7 @@ public class AnalyticsController : Controller
         var model = new StudentAssessmentAnalyticsViewModel
         {
             TotalAttempts = attempts.Count,
-            PassedAttempts = attempts.Count(a => a.Passed),
+            PassedAttempts = attempts.Where(a => a.Passed).Select(a => a.QuizId).Distinct().Count(),
             AveragePercentage = attempts.Count == 0 ? 0 : Math.Round(attempts.Average(a => a.Percentage), 2),
             BestPercentage = attempts.Count == 0 ? 0 : attempts.Max(a => a.Percentage),
             CoursesAssessed = attempts.Select(a => a.Quiz.Module.CourseId).Distinct().Count(),
@@ -82,6 +82,7 @@ public class AnalyticsController : Controller
         }
 
         var courses = await query
+            .AsSplitQuery()
             .Include(c => c.StudentCourses)
             .Include(c => c.Modules)
                 .ThenInclude(m => m.Quizzes)
@@ -109,12 +110,7 @@ public class AnalyticsController : Controller
 
             var completedByLearner = learnerIds.Count == 0
                 ? 0
-                : learnerIds.Count(studentId =>
-                    moduleIds.Count == 0 ||
-                    moduleIds.All(moduleId => progress.Any(p =>
-                        p.StudentId == studentId &&
-                        p.ModuleId == moduleId &&
-                        p.CompletedAt != null)));
+                : course.StudentCourses.Count(sc => sc.CompletedAt != null);
 
             return new InstructorCoursePerformance
             {
