@@ -181,9 +181,9 @@ public class QuizController : Controller
 
         var result = BuildViewModel(quiz);
         result.Answers = answers;
+        result.Submitted = true;
         result.Score = score;
         result.TotalQuestions = totalQuestions;
-        result.Submitted = true;
         result.LastScore = score;
         result.LastTotalQuestions = totalQuestions;
         result.LastPercentage = percentage;
@@ -209,12 +209,14 @@ public class QuizController : Controller
                 {
                     QuestionId = q.QuestionId,
                     QuestionText = q.QuestionText,
+                    CorrectOptionId = q.Options.FirstOrDefault(o => o.IsCorrect)?.OptionId,
                     Options = q.Options
                         .OrderBy(o => o.OptionId)
                         .Select(o => new QuizOptionViewModel
                         {
                             OptionId = o.OptionId,
-                            OptionText = o.OptionText
+                            OptionText = o.OptionText,
+                            IsCorrect = o.IsCorrect
                         })
                         .ToList()
                 })
