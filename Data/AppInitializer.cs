@@ -353,40 +353,244 @@ public class AppInitializer
 
                 context.Quizzes.Add(quiz);
                 await context.SaveChangesAsync();
-
-                var question = new Question
-                {
-                    QuestionText = $"Which outcome is central to the {moduleSeed.Name} module?",
-                    QuestionType = "Multiple Choice",
-                    QuizId = quiz.QuizId
-                };
-
-                context.Questions.Add(question);
-                await context.SaveChangesAsync();
-
-                context.Options.AddRange(
-                    new Option
-                    {
-                        OptionText = "Applying the module concepts in a practical project",
-                        IsCorrect = true,
-                        QuestionId = question.QuestionId
-                    },
-                    new Option
-                    {
-                        OptionText = "Skipping practice and evaluation",
-                        IsCorrect = false,
-                        QuestionId = question.QuestionId
-                    },
-                    new Option
-                    {
-                        OptionText = "Avoiding real-world examples",
-                        IsCorrect = false,
-                        QuestionId = question.QuestionId
-                    });
-
-                await context.SaveChangesAsync();
             }
+
+            await EnsureCheckpointQuestionsAsync(context, quiz, moduleSeed.Name);
         }
+    }
+
+    private static async Task EnsureCheckpointQuestionsAsync(
+        OnlineLearningAppDbContext context,
+        Quiz quiz,
+        string moduleName)
+    {
+        var existingQuestions = await context.Questions
+            .Include(q => q.Options)
+            .Where(q => q.QuizId == quiz.QuizId)
+            .ToListAsync();
+
+        // Older catalog rows contained one generic placeholder question.
+        // Replace that placeholder with substantive, module-aligned assessment items.
+        if (existingQuestions.Count == 1 &&
+            existingQuestions[0].QuestionText.StartsWith("Which outcome is central to the "))
+        {
+            context.Questions.Remove(existingQuestions[0]);
+            await context.SaveChangesAsync();
+            existingQuestions.Clear();
+        }
+
+        if (existingQuestions.Count >= 5)
+        {
+            return;
+        }
+
+        var questions = GetCheckpointQuestions(moduleName);
+        foreach (var item in questions.Take(5))
+        {
+            var question = new Question
+            {
+                QuestionText = item.Question,
+                QuestionType = "Multiple Choice",
+                QuizId = quiz.QuizId
+            };
+
+            context.Questions.Add(question);
+            await context.SaveChangesAsync();
+
+            context.Options.AddRange(
+                item.Options.Select((option, index) => new Option
+                {
+                    OptionText = option,
+                    IsCorrect = index == item.CorrectIndex,
+                    QuestionId = question.QuestionId
+                }));
+
+            await context.SaveChangesAsync();
+        }
+    }
+
+    private static List<(string Question, string[] Options, int CorrectIndex)> GetCheckpointQuestions(string moduleName)
+    {
+        var name = moduleName.ToLowerInvariant();
+
+        if (name.Contains("power bi") || name.Contains("analytics portfolio"))
+            return new()
+            {
+                ("A sales dashboard needs a monthly revenue KPI. Which design choice makes the KPI most useful to decision-makers?",
+                    new[] { "Show revenue with a clearly defined time period and comparison", "Show every transaction as a separate KPI", "Hide the date context to reduce visual clutter", "Use a decorative chart without a business measure" }, 0),
+                ("In a Power BI model, what is the main purpose of defining relationships between tables?",
+                    new[] { "To let filters and calculations propagate between related data", "To increase the number of dashboard colors", "To convert every column into text", "To remove the need for data validation" }, 0),
+                ("Which practice most improves the credibility of an analytics portfolio project?",
+                    new[] { "Documenting the business question, cleaning decisions, metrics and findings", "Showing only the final dashboard screenshot", "Removing all assumptions from the project description", "Using as many visuals as possible regardless of purpose" }, 0),
+                ("A dashboard has ten charts but users cannot identify the main business problem. What should be done first?",
+                    new[] { "Clarify the decision the dashboard is intended to support", "Add five more charts", "Increase every font size", "Replace all charts with pie charts" }, 0),
+                ("Which measure is most appropriate for comparing profitability across products with different revenue levels?",
+                    new[] { "Profit margin", "Customer name", "Order identifier", "Product description length" }, 0)
+            };
+
+        if (name.Contains("sql"))
+            return new()
+            {
+                ("Which SQL clause filters rows before aggregation is performed?",
+                    new[] { "WHERE", "HAVING", "ORDER BY", "GROUP BY" }, 0),
+                ("A query uses GROUP BY customer_id and needs to keep only customers whose total spending exceeds 100000. Which clause is appropriate?",
+                    new[] { "HAVING", "WHERE", "ORDER BY", "DISTINCT" }, 0),
+                ("What does an INNER JOIN return when joining two tables on a matching key?",
+                    new[] { "Rows with matching keys in both tables", "All rows from the left table only", "All rows from both tables regardless of matches", "Only rows with null keys" }, 0),
+                ("Which SQL aggregate function returns the number of rows?",
+                    new[] { "COUNT", "SUM", "AVG", "MAX" }, 0),
+                ("Why should a data analyst avoid SELECT * in production reporting queries when only a few columns are needed?",
+                    new[] { "It can retrieve unnecessary data and make queries less explicit", "It prevents all indexes from working", "It automatically deletes unused columns", "It converts numeric values to text" }, 0)
+            };
+
+        if (name.Contains("pandas") || name.Contains("data analysis") || name.Contains("data science"))
+            return new()
+            {
+                ("In pandas, which operation is commonly used to remove rows containing missing values?",
+                    new[] { "dropna()", "groupby()", "merge()", "describe()" }, 0),
+                ("What is the primary purpose of exploratory data analysis?",
+                    new[] { "Understand distributions, relationships, anomalies and data quality before modeling", "Guarantee that a model will be accurate", "Replace all statistical tests", "Publish a dashboard without inspecting the data" }, 0),
+                ("Which pandas object is designed primarily for two-dimensional tabular data?",
+                    new[] { "DataFrame", "Series", "Index", "Scalar" }, 0),
+                ("Why is a train/test split useful before evaluating a predictive model?",
+                    new[] { "It provides data that can help estimate performance on unseen observations", "It guarantees the model has no bias", "It removes the need for feature engineering", "It increases the number of original observations" }, 0),
+                ("A numeric column contains a few extreme values. What should an analyst do first?",
+                    new[] { "Investigate whether the values are valid observations or data-quality problems", "Delete every extreme value automatically", "Convert the column to text", "Replace all values with the mean without investigation" }, 0)
+            };
+
+        if (name.Contains("machine learning"))
+            return new()
+            {
+                ("What is data leakage in machine learning?",
+                    new[] { "Information unavailable at prediction time is used during training or evaluation", "The model has too few parameters", "The dataset contains only numeric features", "The model is deployed to a cloud service" }, 0),
+                ("Which metric is often useful for evaluating a binary classifier when the classes are imbalanced and false positives and false negatives both matter?",
+                    new[] { "F1 score", "Mean absolute error only", "R-squared only", "Training set size" }, 0),
+                ("What is the main purpose of a validation set?",
+                    new[] { "Compare models or tune choices before final evaluation on held-out test data", "Replace the training data", "Guarantee zero overfitting", "Increase the number of labels" }, 0),
+                ("Which approach is most likely to reduce overfitting?",
+                    new[] { "Regularization and appropriate validation", "Increasing model complexity without validation", "Training repeatedly on the test set", "Removing the target variable" }, 0),
+                ("Why should preprocessing steps such as scaling be fitted using training data before being applied to test data?",
+                    new[] { "To prevent information from the test set influencing the training process", "To make every feature categorical", "To increase the test set size", "To eliminate the target variable" }, 0)
+            };
+
+        if (name.Contains("cybersecurity") || name.Contains("secure") || name.Contains("security"))
+            return new()
+            {
+                ("Which principle means a user should receive only the permissions required to perform their task?",
+                    new[] { "Least privilege", "Open access", "Data duplication", "Fail-open design" }, 0),
+                ("What is a common purpose of multi-factor authentication?",
+                    new[] { "Require more than one independent authentication factor", "Replace authorization with encryption", "Make passwords public", "Disable account monitoring" }, 0),
+                ("Which practice best protects an application secret such as a database password?",
+                    new[] { "Store it in a secure secret-management mechanism rather than source control", "Commit it to a public repository", "Place it in a client-side JavaScript file", "Print it in application logs" }, 0),
+                ("What is SQL injection?",
+                    new[] { "Manipulating application SQL through unsafe handling of untrusted input", "Encrypting a database backup", "Compressing a SQL query", "Creating a database index" }, 0),
+                ("Why is input validation important in a web application?",
+                    new[] { "It helps enforce expected input constraints and reduces unsafe or malformed input", "It guarantees every user is trustworthy", "It removes the need for authorization", "It makes passwords unnecessary" }, 0)
+            };
+
+        if (name.Contains("cloud") || name.Contains("container") || name.Contains("devops"))
+            return new()
+            {
+                ("What is the main benefit of packaging an application and its dependencies in a container?",
+                    new[] { "More consistent execution across compatible environments", "Automatic elimination of all security risks", "Permanent storage without a database", "Removal of the need for application testing" }, 0),
+                ("What is the primary purpose of a CI pipeline?",
+                    new[] { "Automatically build and test changes so problems are detected early", "Store production passwords in source code", "Replace version control", "Prevent developers from writing tests" }, 0),
+                ("Which practice supports safer deployments?",
+                    new[] { "Automated tests and a controlled release process", "Deploying untested changes directly to production", "Disabling health checks", "Removing rollback options" }, 0),
+                ("What does horizontal scaling generally mean?",
+                    new[] { "Adding more application instances to handle load", "Increasing only the CPU of one server", "Deleting application instances", "Changing source-code indentation" }, 0),
+                ("Why are health checks useful for a deployed web service?",
+                    new[] { "They provide a machine-readable indication of service availability or readiness", "They replace application logs", "They guarantee zero downtime", "They automatically fix every application bug" }, 0)
+            };
+
+        if (name.Contains("github") || name.Contains("git"))
+            return new()
+            {
+                ("What is the purpose of a Git branch?",
+                    new[] { "To isolate a line of development so changes can be worked on independently", "To permanently delete the repository", "To replace commits with screenshots", "To encrypt all source code" }, 0),
+                ("What is the purpose of a pull request?",
+                    new[] { "To propose changes for review and integration into another branch", "To install Git", "To rename every commit", "To remove version history" }, 0),
+                ("Why are automated CI checks valuable on a pull request?",
+                    new[] { "They can detect build or test failures before changes are merged", "They guarantee the code has no security vulnerabilities", "They remove the need for code review", "They prevent all merge conflicts" }, 0),
+                ("What should a good commit message communicate?",
+                    new[] { "The meaningful change introduced by the commit", "The developer's private password", "The entire repository contents", "A random identifier with no context" }, 0),
+                ("When using an AI coding assistant, who should remain responsible for reviewing and validating the generated code?",
+                    new[] { "The developer or team responsible for the software", "The AI tool itself", "The operating system", "The Git hosting provider" }, 0)
+            };
+
+        if (name.Contains("react"))
+            return new()
+            {
+                ("What is a React component primarily used for?",
+                    new[] { "Encapsulating reusable UI structure and behavior", "Creating database tables directly", "Replacing HTTP entirely", "Encrypting browser storage" }, 0),
+                ("Why is state used in a React component?",
+                    new[] { "To represent data that can change and affect what the component renders", "To permanently store server backups", "To replace all CSS", "To disable re-rendering" }, 0),
+                ("What is a common reason to split a large React interface into smaller components?",
+                    new[] { "Improved reuse, maintainability and separation of concerns", "To make every page require a database", "To prevent any component from receiving data", "To remove the need for testing" }, 0),
+                ("When a React application calls a backend API, what does the frontend typically receive?",
+                    new[] { "A response containing data or an error status", "A compiled database server", "A Git branch", "A browser extension automatically" }, 0),
+                ("Why are stable keys useful when rendering lists in React?",
+                    new[] { "They help React identify list items across renders", "They encrypt each list item", "They create SQL indexes", "They prevent all state changes" }, 0)
+            };
+
+        if (name.Contains("api") || name.Contains("fastapi") || name.Contains("python"))
+            return new()
+            {
+                ("Which HTTP method is conventionally used to retrieve a resource?",
+                    new[] { "GET", "POST", "PATCH", "DELETE" }, 0),
+                ("What is the main purpose of an API validation layer?",
+                    new[] { "Check that incoming data satisfies expected rules before business processing", "Automatically approve every request", "Hide all server errors from developers", "Replace database backups" }, 0),
+                ("What does an HTTP 404 response generally indicate?",
+                    new[] { "The requested resource was not found", "The request succeeded and created a resource", "The server is permanently offline", "The user has authenticated successfully" }, 0),
+                ("Why should API endpoints enforce authorization in addition to authentication?",
+                    new[] { "Authentication identifies a caller, while authorization determines permitted actions", "Authorization replaces passwords", "Authentication automatically grants every permission", "They are identical concepts" }, 0),
+                ("What is a Python virtual environment useful for?",
+                    new[] { "Isolating project dependencies from other Python projects", "Encrypting source code", "Replacing version control", "Hosting a database automatically" }, 0)
+            };
+
+        if (name.Contains("rag") || name.Contains("prompt") || name.Contains("multimodal") || name.Contains("generative ai") || name.Contains("agent"))
+            return new()
+            {
+                ("What is retrieval-augmented generation designed to do?",
+                    new[] { "Retrieve relevant external information and use it to ground a generated response", "Guarantee that a model never makes an error", "Replace all databases with prompts", "Train a language model from scratch for every question" }, 0),
+                ("Which prompt practice usually improves the reliability of a structured task?",
+                    new[] { "State the goal, relevant context, constraints and expected output format", "Remove all context and constraints", "Ask several unrelated tasks without structure", "Hide the desired output format" }, 0),
+                ("Why are embeddings useful in many RAG systems?",
+                    new[] { "They represent content numerically so semantically related items can be retrieved", "They automatically verify every generated claim", "They replace application authorization", "They permanently store every model response" }, 0),
+                ("What is prompt injection?",
+                    new[] { "Untrusted instructions attempt to manipulate an AI system into violating intended behavior", "A technique for compressing an image", "A database indexing method", "A Git merge strategy" }, 0),
+                ("Why should an AI application evaluate generated answers?",
+                    new[] { "To measure quality, detect failure patterns and improve reliability", "To guarantee every response is factually perfect", "To remove the need for user feedback", "To make the model training set unnecessary" }, 0)
+            };
+
+        if (name.Contains("git") || name.Contains("programming"))
+            return new()
+            {
+                ("What does a function provide in a programming language?",
+                    new[] { "A reusable unit of behavior that can accept inputs and produce a result", "A database server", "A network cable", "A password manager" }, 0),
+                ("Why are exceptions handled in application code?",
+                    new[] { "To respond to expected or unexpected runtime failures in a controlled way", "To make every program error impossible", "To remove the need for testing", "To convert all variables into strings" }, 0),
+                ("What is version control primarily used for?",
+                    new[] { "Tracking changes to files and collaborating safely on code", "Compressing application images", "Replacing application databases", "Generating passwords" }, 0),
+                ("What is a unit test intended to verify?",
+                    new[] { "A small, focused piece of software behavior", "The entire internet connection", "A user's identity document", "A cloud provider's billing system" }, 0),
+                ("Which practice makes code easier for another developer to maintain?",
+                    new[] { "Clear naming, focused functions and useful documentation", "Long functions with hidden side effects", "Duplicating logic in every file", "Removing meaningful error handling" }, 0)
+            };
+
+        return new()
+        {
+            ("What is the most effective way to demonstrate mastery of a technical module?",
+                new[] { "Apply the concepts to a realistic task and evaluate the result", "Memorize headings without practice", "Skip exercises and assessments", "Avoid using the concepts outside the lesson" }, 0),
+            ("Why are checkpoint assessments useful in an online course?",
+                new[] { "They reveal gaps in understanding while learning is still in progress", "They guarantee professional certification", "They replace all practical work", "They make feedback unnecessary" }, 0),
+            ("What makes a multiple-choice distractor useful?",
+                new[] { "It represents a plausible misunderstanding of the target concept", "It is obviously unrelated to the question", "It contains the correct answer in disguise", "It is intentionally nonsensical" }, 0),
+            ("Why should learners review incorrect quiz answers?",
+                new[] { "Review helps identify misconceptions and directs further study", "Review is only useful after a perfect score", "Incorrect answers should never be discussed", "Review makes practical projects unnecessary" }, 0),
+            ("Which learning activity best checks whether a learner can transfer a concept to a new situation?",
+                new[] { "A realistic scenario requiring the concept to solve a new problem", "Repeating the same definition word for word", "Reading the course title again", "Skipping the assessment" }, 0)
+        };
     }
 
     private static async Task SeedRecommendedMaterialAsync(OnlineLearningAppDbContext context, Module module)
