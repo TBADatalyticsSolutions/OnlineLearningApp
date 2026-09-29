@@ -97,15 +97,9 @@ public class AnalyticsController : Controller
             .Where(a => courseIds.Contains(a.Quiz.Module.CourseId))
             .ToListAsync();
 
-        var progress = await _context.StudentModuleProgress
-            .AsNoTracking()
-            .Where(p => courseIds.Contains(p.Module.CourseId))
-            .ToListAsync();
-
         var rows = courses.Select(course =>
         {
             var courseAttempts = attempts.Where(a => a.Quiz.Module.CourseId == course.Id).ToList();
-            var moduleIds = course.Modules.Select(m => m.ModuleId).ToHashSet();
             var learnerIds = course.StudentCourses.Select(sc => sc.StudentId).ToHashSet();
 
             var completedByLearner = learnerIds.Count == 0
