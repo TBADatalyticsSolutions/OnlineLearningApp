@@ -391,69 +391,142 @@ public class AppInitializer
 
     private static async Task SeedRecommendedMaterialAsync(OnlineLearningAppDbContext context, Module module)
     {
-        if (await context.CourseMaterials.AnyAsync(m => m.ModuleId == module.ModuleId))
+        var resources = GetRecommendedResources(module.ModuleName);
+        var existingTitles = await context.CourseMaterials
+            .Where(m => m.ModuleId == module.ModuleId)
+            .Select(m => m.Title)
+            .ToListAsync();
+
+        if (resources.Count == 0 || resources.All(r => existingTitles.Contains(r.Title)))
         {
             return;
         }
 
-        var (title, url, description) = GetRecommendedResource(module.ModuleName);
         var adminId = await context.Accounts
             .Where(a => a.Role == UserRoles.Admin)
             .Select(a => a.Id)
             .FirstOrDefaultAsync();
 
-        context.CourseMaterials.Add(new CourseMaterial
+        foreach (var resource in resources)
         {
-            ModuleId = module.ModuleId,
-            Title = title,
-            ResourceUrl = url,
-            MaterialType = "Link",
-            Description = description,
-            UploadedById = string.IsNullOrWhiteSpace(adminId) ? null : adminId,
-            CreatedAt = DateTime.UtcNow
-        });
+            if (existingTitles.Contains(resource.Title))
+            {
+                continue;
+            }
+
+            context.CourseMaterials.Add(new CourseMaterial
+            {
+                ModuleId = module.ModuleId,
+                Title = resource.Title,
+                ResourceUrl = resource.Url,
+                MaterialType = "Link",
+                Description = resource.Description,
+                UploadedById = string.IsNullOrWhiteSpace(adminId) ? null : adminId,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
 
         await context.SaveChangesAsync();
     }
 
-    private static (string Title, string Url, string Description) GetRecommendedResource(string moduleName)
+    private static List<(string Title, string Url, string Description)> GetRecommendedResources(string moduleName)
     {
         var name = moduleName.ToLowerInvariant();
 
         if (name.Contains("power bi") || name.Contains("analytics portfolio"))
-            return ("Microsoft Learn: Prepare and visualize data with Power BI", "https://learn.microsoft.com/en-us/training/paths/prepare-visualize-data-power-bi/", "Official Microsoft learning path covering data preparation, transformation and interactive Power BI reports.");
+            return new()
+            {
+                ("Microsoft Learn: Prepare and visualize data with Power BI", "https://learn.microsoft.com/en-us/training/paths/prepare-visualize-data-power-bi/", "Official Microsoft learning path covering data preparation, transformation and interactive Power BI reports."),
+                ("Microsoft Learn: Model data with Power BI", "https://learn.microsoft.com/en-us/training/paths/model-data-power-bi/", "Official Microsoft learning path covering relationships, semantic models and analytical data modeling."),
+                ("Microsoft Learn: Design effective Power BI reports", "https://learn.microsoft.com/en-us/training/modules/power-bi-effective-reports/", "Guidance for designing clear, useful and interactive Power BI reports.")
+            };
 
         if (name.Contains("sql"))
-            return ("PostgreSQL SQL Tutorial", "https://www.postgresql.org/docs/current/tutorial-sql.html", "Official SQL tutorial covering tables, queries, joins, aggregates, updates and deletes.");
+            return new()
+            {
+                ("PostgreSQL SQL Tutorial", "https://www.postgresql.org/docs/current/tutorial-sql.html", "Official SQL tutorial covering tables, queries, joins, aggregates, updates and deletes."),
+                ("SQLBolt Interactive Lessons", "https://sqlbolt.com/", "Interactive SQL lessons covering SELECT, filtering, joins, aggregation and database concepts."),
+                ("Microsoft Learn: Query and modify data with Transact-SQL", "https://learn.microsoft.com/en-us/training/paths/get-started-querying-with-transact-sql/", "Structured Microsoft learning material for practical SQL querying and data manipulation.")
+            };
 
         if (name.Contains("pandas") || name.Contains("data analysis") || name.Contains("data science"))
-            return ("pandas Getting Started", "https://pandas.pydata.org/docs/getting_started/", "Official pandas documentation for exploring, cleaning and transforming tabular data.");
+            return new()
+            {
+                ("pandas Getting Started", "https://pandas.pydata.org/docs/getting_started/", "Official pandas documentation for exploring, cleaning and transforming tabular data."),
+                ("NumPy User Guide", "https://numpy.org/doc/stable/user/", "Official NumPy guide covering arrays, numerical operations and scientific computing foundations."),
+                ("Matplotlib Tutorials", "https://matplotlib.org/stable/tutorials/index.html", "Official tutorials for creating charts and visualizations in Python.")
+            };
 
         if (name.Contains("machine learning") || name.StartsWith("ml ") || name.Contains("models") || name.Contains("evaluation"))
-            return ("scikit-learn User Guide", "https://scikit-learn.org/stable/user_guide/", "Official scikit-learn guide covering supervised and unsupervised learning, model selection and evaluation.");
+            return new()
+            {
+                ("scikit-learn User Guide", "https://scikit-learn.org/stable/user_guide/", "Official scikit-learn guide covering supervised and unsupervised learning, model selection and evaluation."),
+                ("Google Machine Learning Crash Course", "https://developers.google.com/machine-learning/crash-course", "Practical introductory lessons covering regression, classification, data preparation and model evaluation."),
+                ("Microsoft Learn: Create machine learning models", "https://learn.microsoft.com/en-us/training/paths/create-machine-learn-models/", "Structured learning path covering machine learning concepts and practical model development.")
+            };
 
         if (name.Contains("cybersecurity") || name.Contains("secure") || name.Contains("security"))
-            return ("OWASP Top 10", "https://top10.owasp.org/2025/", "OWASP's 2025 awareness document for the most important web application security risks.");
+            return new()
+            {
+                ("OWASP Top 10", "https://top10.owasp.org/2025/", "OWASP's 2025 awareness document for the most important web application security risks."),
+                ("OWASP Web Security Testing Guide", "https://owasp.org/www-project-web-security-testing-guide/", "Practical guidance for understanding and testing common web application security weaknesses."),
+                ("CISA Cybersecurity Resources", "https://www.cisa.gov/topics/cyber-threats-and-advisories", "Authoritative cybersecurity resources covering threats, advisories and defensive practices.")
+            };
 
         if (name.Contains("cloud") || name.Contains("container"))
-            return ("Docker Get Started", "https://docs.docker.com/get-started/", "Official Docker learning material covering containers, images and basic workflows.");
+            return new()
+            {
+                ("Docker Get Started", "https://docs.docker.com/get-started/", "Official Docker learning material covering containers, images and basic workflows."),
+                ("Microsoft Learn: Azure Fundamentals", "https://learn.microsoft.com/en-us/training/paths/azure-fundamentals-describe-cloud-concepts/", "Cloud fundamentals covering core concepts, services, security and architecture."),
+                ("Kubernetes Basics", "https://kubernetes.io/docs/tutorials/kubernetes-basics/", "Official Kubernetes tutorial introducing container orchestration and core cluster concepts.")
+            };
 
         if (name.Contains("ci/cd") || name.Contains("github") || name.Contains("team collaboration"))
-            return ("GitHub Actions Quickstart", "https://docs.github.com/en/actions/get-started/quickstart", "Official GitHub guide to workflows, automation, CI and deployment pipelines.");
+            return new()
+            {
+                ("GitHub Actions Quickstart", "https://docs.github.com/en/actions/get-started/quickstart", "Official GitHub guide to workflows, automation, CI and deployment pipelines."),
+                ("GitHub Skills: Test with Actions", "https://github.com/skills/test-with-actions", "Hands-on exercise for adding automated testing to a GitHub repository."),
+                ("GitHub Flow", "https://docs.github.com/en/get-started/using-github/github-flow", "Official GitHub guidance for branch-based collaboration, pull requests and code review.")
+            };
 
         if (name.Contains("react"))
-            return ("React Quick Start", "https://react.dev/learn", "Official React guide covering components, state, events, lists and everyday React concepts.");
+            return new()
+            {
+                ("React Quick Start", "https://react.dev/learn", "Official React guide covering components, state, events, lists and everyday React concepts."),
+                ("React Learn: Thinking in React", "https://react.dev/learn/thinking-in-react", "Official guide to decomposing interfaces into components and managing application data flow."),
+                ("MDN: JavaScript Guide", "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide", "Comprehensive JavaScript reference material useful for building modern React applications.")
+            };
 
         if (name.Contains("api") || name.Contains("fastapi") || name.Contains("python"))
-            return ("Python Official Tutorial", "https://docs.python.org/3/tutorial/", "Official Python tutorial covering core language concepts and practical programming foundations.");
+            return new()
+            {
+                ("Python Official Tutorial", "https://docs.python.org/3/tutorial/", "Official Python tutorial covering core language concepts and practical programming foundations."),
+                ("FastAPI Tutorial", "https://fastapi.tiangolo.com/tutorial/", "Official FastAPI tutorial covering API routes, validation, dependencies and application structure."),
+                ("MDN: HTTP Overview", "https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview", "Reference material explaining HTTP requests, responses, methods, status codes and web API fundamentals.")
+            };
 
         if (name.Contains("rag") || name.Contains("prompt") || name.Contains("multimodal") || name.Contains("generative ai") || name.Contains("agent"))
-            return ("Microsoft Learn: Generative AI and AI agents", "https://learn.microsoft.com/en-us/training/modules/fundamentals-generative-ai/", "Official Microsoft Learn material covering generative AI, large language models, prompts and AI agents.");
+            return new()
+            {
+                ("Microsoft Learn: Generative AI and AI agents", "https://learn.microsoft.com/en-us/training/modules/fundamentals-generative-ai/", "Official Microsoft Learn material covering generative AI, large language models, prompts and AI agents."),
+                ("Hugging Face: NLP Course", "https://huggingface.co/learn/nlp-course/chapter1/1", "Practical course material covering transformers, datasets, tokenizers and modern NLP workflows."),
+                ("OpenAI: Prompt Engineering Guide", "https://platform.openai.com/docs/guides/prompt-engineering", "Official OpenAI guidance for designing prompts that produce more consistent and useful model outputs.")
+            };
 
         if (name.Contains("git"))
-            return ("GitHub Skills: Introduction to GitHub", "https://github.com/skills/introduction-to-github", "Hands-on GitHub Skills exercise covering repositories, branches, commits and pull requests.");
+            return new()
+            {
+                ("GitHub Skills: Introduction to GitHub", "https://github.com/skills/introduction-to-github", "Hands-on GitHub Skills exercise covering repositories, branches, commits and pull requests."),
+                ("Pro Git Book", "https://git-scm.com/book/en/v2", "Comprehensive Git reference covering repositories, branching, merging, remotes and collaboration."),
+                ("GitHub Docs: About Git", "https://docs.github.com/en/get-started/learning-about-github/about-git", "Official GitHub explanation of Git concepts and distributed version control.")
+            };
 
-        return ("Microsoft Learn", "https://learn.microsoft.com/training/", "Browse Microsoft's self-paced technical training library for additional study.");
+        return new()
+        {
+            ("Microsoft Learn", "https://learn.microsoft.com/training/", "Browse Microsoft's self-paced technical training library for additional study."),
+            ("freeCodeCamp", "https://www.freecodecamp.org/learn/", "Free interactive technical lessons and projects across programming, data and web development."),
+            ("MDN Web Docs", "https://developer.mozilla.org/en-US/", "Authoritative developer documentation and tutorials for web technologies.")
+        };
     }
 
     private sealed record CourseSeed(
