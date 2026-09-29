@@ -193,7 +193,7 @@ public class QuizController : Controller
 
         await _context.SaveChangesAsync();
 
-        var result = BuildViewModel(quiz);
+        var result = BuildViewModel(quiz, selectedQuestions.Select(q => q.QuestionId));
         result.Answers = answers;
         result.SelectedQuestionIds = selectedQuestions.Select(q => q.QuestionId).ToList();
         result.Submitted = true;
@@ -207,8 +207,26 @@ public class QuizController : Controller
         return View("Take", result);
     }
 
-    private static QuizAttemptViewModel BuildViewModel(Quiz quiz)
+    private static QuizAttemptViewModel BuildViewModel(Quiz quiz, IEnumerable<int>? selectedQuestionIds = null)
     {
+        var questions = quiz.Questions.AsEnumerable();
+
+        if (selectedQuestionIds is null)
+        {
+            questions = questions
+                .OrderBy(_ => Random.Shared.Next())
+                .Take(Math.Min(5, quiz.Questions.Count));
+        }
+        else
+        {
+            var ids = selectedQuestionIds.ToHashSet();
+            questions = questions
+                .Where(q => ids.Contains(q.QuestionId))
+                .OrderBy(_ => Random.Shared.Next());
+        }
+
+        var selectedQuestions = questions.ToList();
+
         return new QuizAttemptViewModel
         {
             QuizId = quiz.QuizId,
@@ -217,9 +235,9 @@ public class QuizController : Controller
             CourseId = quiz.Module.CourseId,
             CourseName = quiz.Module.Course.CourseName,
             PassMark = quiz.PassMark,
-            TotalQuestions = quiz.Questions.Count,
-            Questions = quiz.Questions
-                .OrderBy(q => Random.Shared.Next())
+            TotalQuestions = selectedQuestions.Count,
+            SelectedQuestionIds = selectedQuestions.Select(q => q.QuestionId).ToList(),
+            Questions = selectedQuestions
                 .Select(q => new QuizQuestionViewModel
                 {
                     QuestionId = q.QuestionId,
