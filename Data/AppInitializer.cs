@@ -443,6 +443,21 @@ public class AppInitializer
                     new[] { "It can retrieve unnecessary data and make queries less explicit", "It prevents all indexes from working", "It automatically deletes unused columns", "It converts numeric values to text" }, 0)
             };
 
+        if (name.Contains("excel") || name.Contains("data analytics") || name.Contains("statistics") || name.Contains("eda") || name.Contains("business insights"))
+            return new()
+            {
+                ("A business analyst finds that monthly revenue increased while the number of orders fell. What should be examined before concluding performance improved?",
+                    new[] { "Average order value and the business context behind the change", "Only the number of dashboard colors", "The customer names alphabetically", "The file name of the dataset" }, 0),
+                ("Which statistic describes the middle value when observations are ordered?",
+                    new[] { "Median", "Variance", "Range", "Standard deviation" }, 0),
+                ("What is the main purpose of a confidence interval in statistical analysis?",
+                    new[] { "Describe a plausible range for a population parameter under the stated method", "Guarantee that every observation lies inside the interval", "Prove that a sample contains no bias", "Replace the need to define the population" }, 0),
+                ("Why should an analyst inspect distributions before selecting a visualization or statistical method?",
+                    new[] { "The distribution can reveal skewness, outliers and other features that affect interpretation", "Every dataset has the same distribution", "Distributions determine a user's password", "Visualization never depends on data characteristics" }, 0),
+                ("Which Power BI practice best supports a trustworthy business insight?",
+                    new[] { "Connect the insight to a defined KPI, appropriate data and a clear business question", "Choose the chart with the most decorative elements", "Hide the metric definition from viewers", "Use every available column in one visual" }, 0)
+            };
+
         if (name.Contains("pandas") || name.Contains("data analysis") || name.Contains("data science"))
             return new()
             {
@@ -531,6 +546,21 @@ public class AppInitializer
                     new[] { "A response containing data or an error status", "A compiled database server", "A Git branch", "A browser extension automatically" }, 0),
                 ("Why are stable keys useful when rendering lists in React?",
                     new[] { "They help React identify list items across renders", "They encrypt each list item", "They create SQL indexes", "They prevent all state changes" }, 0)
+            };
+
+        if (name.Contains("python coding for kids") || name.Contains("creative programming"))
+            return new()
+            {
+                ("A Python program asks a learner for their name and then displays a greeting. Which concept is being used to receive the learner's response?",
+                    new[] { "Input", "Inheritance", "Exception handling", "Database indexing" }, 0),
+                ("Which Python structure is best for repeating an action a known number of times?",
+                    new[] { "A for loop", "A database table", "An HTTP header", "A CSS selector" }, 0),
+                ("What is a variable useful for in a Python program?",
+                    new[] { "Giving a name to a value that the program can use", "Connecting a computer to Wi-Fi", "Creating a database server automatically", "Encrypting the entire program" }, 0),
+                ("A game checks whether a player's score is greater than 100 before awarding a badge. Which programming concept is most directly involved?",
+                    new[] { "A conditional statement", "A package manager", "A database migration", "A network protocol" }, 0),
+                ("Why is testing a small game after adding a new feature useful?",
+                    new[] { "It helps discover whether the new change behaves as intended and did not introduce obvious problems", "It guarantees the game can never contain a bug", "It removes the need for source code", "It automatically publishes the game to every device" }, 0)
             };
 
         if (name.Contains("api") || name.Contains("fastapi") || name.Contains("python"))
