@@ -3,13 +3,17 @@
 <div class="container-fluid px-3 px-lg-4 py-4 py-lg-5">
     <div class="row justify-content-center">
         <div class="col-xl-9">
-            <div class="d-flex flex-wrap justify-content-between gap-2"><a asp-controller="Course" asp-action="Learn" asp-route-id="@Model.CourseId" class="small text-decoration-none"><i class="bi bi-arrow-left me-1"></i> Back to learning</a><a asp-action="History" class="small text-decoration-none">Assessment history <i class="bi bi-arrow-right ms-1"></i></a></div>
+            <div class="d-flex flex-wrap justify-content-between gap-2">
+                <a asp-controller="Course" asp-action="Learn" asp-route-id="@Model.CourseId" class="small text-decoration-none"><i class="bi bi-arrow-left me-1"></i> Back to learning</a>
+                <a asp-action="History" class="small text-decoration-none">Assessment history <i class="bi bi-arrow-right ms-1"></i></a>
+            </div>
             <div class="quiz-header mt-3 mb-4">
                 <span class="badge bg-white text-primary mb-3">Checkpoint assessment</span>
                 <h1 class="h2 fw-bold">@Model.QuizName</h1>
                 <p class="mb-0" style="color:#d5e5f7;">@Model.Description</p>
                 <div class="small mt-3" style="color:#c4d7ee;"><i class="bi bi-list-check me-1"></i> @Model.TotalQuestions questions · Pass mark: @Model.PassMark.ToString("0.##")%</div>
             </div>
+
             @if (Model.Submitted) {
                 var percentage = Model.TotalQuestions == 0 ? 0 : Math.Round(Model.Score * 100m / Model.TotalQuestions, 2);
                 var passed = percentage >= Model.PassMark;
@@ -20,31 +24,45 @@
                     <div class="mt-2 small">@(passed ? "You have demonstrated the required mastery for this checkpoint." : "Review the marked answers below and retry the assessment after revisiting the related lesson.")</div>
                 </div>
             }
+
             <form asp-action="Submit" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="QuizId" value="@Model.QuizId" />
-                @for (var i=0; i<Model.Questions.Count; i++) {
-                    var question=Model.Questions[i];
+
+                @* Preserve the server-selected question set across POST. This prevents
+                   an empty SelectedQuestionIds collection when model binding occurs. *@
+                @foreach (var questionId in Model.SelectedQuestionIds.Distinct())
+                {
+                    <input type="hidden" name="SelectedQuestionIds" value="@questionId" />
+                }
+
+                @for (var i = 0; i < Model.Questions.Count; i++) {
+                    var question = Model.Questions[i];
                     <article class="question-card p-4 p-lg-5 mb-4">
-                        <div class="d-flex justify-content-between gap-3 mb-3"><span class="eyebrow">Question @(i+1)</span><span class="small text-muted-custom">@(i+1) / @Model.Questions.Count</span></div>
+                        <div class="d-flex justify-content-between gap-3 mb-3">
+                            <span class="eyebrow">Question @(i + 1)</span>
+                            <span class="small text-muted-custom">@(i + 1) / @Model.Questions.Count</span>
+                        </div>
                         <h2 class="h5 fw-bold mb-4">@question.QuestionText</h2>
                         <div class="d-grid gap-2">
-                        @foreach(var option in question.Options) {
-                            var selected=Model.Answers.TryGetValue(question.QuestionId,out var answer) && answer==option.OptionId;
-                            var reviewClass = Model.Submitted
-                                ? (option.IsCorrect ? "border-success bg-success-subtle" : (selected ? "border-danger bg-danger-subtle" : ""))
-                                : "";
-                            <label class="answer-option d-flex align-items-start gap-3 @reviewClass">
-                                <input class="form-check-input mt-1" type="radio" name="Answers[@question.QuestionId]" value="@option.OptionId" @(selected ? "checked" : "") />
-                                <span class="flex-grow-1">@option.OptionText
-                                    @if (Model.Submitted && option.IsCorrect) { <span class="badge text-bg-success ms-2">Correct answer</span> }
-                                    @if (Model.Submitted && selected && !option.IsCorrect) { <span class="badge text-bg-danger ms-2">Your answer</span> }
-                                </span>
-                            </label>
-                        }
+                            @foreach (var option in question.Options) {
+                                var selected = Model.Answers.TryGetValue(question.QuestionId, out var answer) && answer == option.OptionId;
+                                var reviewClass = Model.Submitted
+                                    ? (option.IsCorrect ? "border-success bg-success-subtle" : (selected ? "border-danger bg-danger-subtle" : ""))
+                                    : "";
+                                <label class="answer-option d-flex align-items-start gap-3 @reviewClass">
+                                    <input class="form-check-input mt-1" type="radio" name="Answers[@question.QuestionId]" value="@option.OptionId" @(selected ? "checked" : "") />
+                                    <span class="flex-grow-1">
+                                        @option.OptionText
+                                        @if (Model.Submitted && option.IsCorrect) { <span class="badge text-bg-success ms-2">Correct answer</span> }
+                                        @if (Model.Submitted && selected && !option.IsCorrect) { <span class="badge text-bg-danger ms-2">Your answer</span> }
+                                    </span>
+                                </label>
+                            }
                         </div>
                     </article>
                 }
+
                 <div class="d-flex flex-wrap justify-content-between gap-2">
                     <a asp-controller="Course" asp-action="Learn" asp-route-id="@Model.CourseId" class="btn btn-soft btn-lg">Save & return</a>
                     @if (Model.Submitted) {
