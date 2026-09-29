@@ -13,10 +13,7 @@ public class Module
         public virtual Course Course { get; set; } = default!;
         // Navigation properties
         public virtual ICollection<Quiz> Quizzes { get; set; } = new List<Quiz>();
+        public virtual ICollection<CourseMaterial> Materials { get; set; } = new List<CourseMaterial>();
         public ICollection<Course_Module> Courses_Modules { get; set; } = new List<Course_Module>();
 
-    public static implicit operator int(Module v)
-    {
-        throw new NotImplementedException();
-    }
 }

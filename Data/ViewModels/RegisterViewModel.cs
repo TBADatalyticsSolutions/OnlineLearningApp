@@ -1,28 +1,26 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace OnlineLearningApp;
 
 public class RegisterViewModel
 {
-    [Required]
-    [Display(Name = "Full name Last Name before First Name")]
-    public string FullName { get; set; } = default!;
-    [Required]
-    [Display(Name = "Username")]
-    public string Username { get; set; } = default!;
+    [Required, StringLength(150)]
+    [Display(Name = "Full name")]
+    public string FullName { get; set; } = string.Empty;
 
+    [Required, EmailAddress, StringLength(256)]
     [Display(Name = "Email address")]
-    [Required(ErrorMessage = "Email address is required")]
-    public string EmailAddress { get; set; } = default!;
+    public string EmailAddress { get; set; } = string.Empty;
 
     [Required]
-    [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+    [StringLength(100, MinimumLength = 8, ErrorMessage = "The password must be between {2} and {1} characters.")]
     [DataType(DataType.Password)]
     [Display(Name = "Password")]
-    public string Password { get; set; } = default!;
+    public string Password { get; set; } = string.Empty;
 
+    [Required]
     [DataType(DataType.Password)]
     [Display(Name = "Confirm password")]
-    [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
-    public string ConfirmPassword { get; set; } = default!;
+    [Compare(nameof(Password), ErrorMessage = "The password and confirmation password do not match.")]
+    public string ConfirmPassword { get; set; } = string.Empty;
 }

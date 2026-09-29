@@ -6,70 +6,119 @@ namespace OnlineLearningApp.Data;
 
 public class AppInitializer
 {
-    public static void Initialize(IServiceProvider serviceProvider)
+    public static async Task InitializeAsync(IServiceProvider serviceProvider)
     {
-        using var context = new OnlineLearningAppDbContext(
-            serviceProvider.GetRequiredService<DbContextOptions<OnlineLearningAppDbContext>>());
+        using var scope = serviceProvider.CreateScope();
 
-        SeedAccounts(context);
-        SeedModernCourseCatalog(context);
+        var context = scope.ServiceProvider.GetRequiredService<OnlineLearningAppDbContext>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<Account>>();
+        var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<AppInitializer>>();
+
+        foreach (var roleName in new[] { UserRoles.Admin, UserRoles.Instructor, UserRoles.Student })
+        {
+            if (!await roleManager.RoleExistsAsync(roleName))
+            {
+                var result = await roleManager.CreateAsync(new IdentityRole(roleName));
+                if (!result.Succeeded)
+                {
+                    throw new InvalidOperationException(
+                        $"Unable to create role '{roleName}': {string.Join("; ", result.Errors.Select(e => e.Description))}");
+                }
+            }
+        }
+
+        await SeedAccountAsync(
+            userManager,
+            configuration["SeedAccounts:AdminPassword"],
+            "admin",
+            "admin@example.com",
+            "Administrator",
+            UserRoles.Admin,
+            logger);
+
+        await SeedAccountAsync(
+            userManager,
+            configuration["SeedAccounts:InstructorPassword"],
+            "Instructor1",
+            "instructor1@example.com",
+            "Lead Instructor",
+            UserRoles.Instructor,
+            logger);
+
+        await SeedAccountAsync(
+            userManager,
+            configuration["SeedAccounts:StudentPassword"],
+            "student1",
+            "student1@example.com",
+            "Demo Student",
+            UserRoles.Student,
+            logger);
+
+        await SeedModernCourseCatalogAsync(context);
     }
 
-    private static void SeedAccounts(OnlineLearningAppDbContext context)
+    private static async Task SeedAccountAsync(
+        UserManager<Account> userManager,
+        string? password,
+        string userName,
+        string email,
+        string fullName,
+        string role,
+        ILogger logger)
     {
-        var hasher = new PasswordHasher<Account>();
+        var user = await userManager.FindByNameAsync(userName);
 
-        var admin = context.Accounts.FirstOrDefault(a => a.UserName == "admin");
-        if (admin is null)
+        if (user is null)
         {
-            admin = new Account
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                logger.LogWarning(
+                    "Seed account {UserName} was not created because SeedAccounts:{Role}Password is not configured.",
+                    userName,
+                    role);
+                return;
+            }
+
+            user = new Account
             {
                 Id = Guid.NewGuid().ToString(),
-                UserName = "admin",
-                FullName = "Administrator",
-                Email = "admin@example.com",
-                Role = UserRoles.Admin
+                UserName = userName,
+                FullName = fullName,
+                Email = email,
+                EmailConfirmed = true,
+                Role = role
             };
-            admin.PasswordHash = hasher.HashPassword(admin, "admin123");
-            context.Accounts.Add(admin);
-        }
 
-        var instructor = context.Accounts.FirstOrDefault(a => a.UserName == "Instructor1");
-        if (instructor is null)
-        {
-            instructor = new Account
+            var result = await userManager.CreateAsync(user, password);
+            if (!result.Succeeded)
             {
-                Id = Guid.NewGuid().ToString(),
-                UserName = "Instructor1",
-                FullName = "Lead Instructor",
-                Email = "instructor1@example.com",
-                Role = UserRoles.Instructor
-            };
-            instructor.PasswordHash = hasher.HashPassword(instructor, "instructor123");
-            context.Accounts.Add(instructor);
+                throw new InvalidOperationException(
+                    $"Unable to create seed account '{userName}': {string.Join("; ", result.Errors.Select(e => e.Description))}");
+            }
         }
 
-        var student = context.Accounts.FirstOrDefault(a => a.UserName == "student1");
-        if (student is null)
+        if (!await userManager.IsInRoleAsync(user, role))
         {
-            student = new Account
+            var roleResult = await userManager.AddToRoleAsync(user, role);
+            if (!roleResult.Succeeded)
             {
-                Id = Guid.NewGuid().ToString(),
-                UserName = "student1",
-                FullName = "Demo Student",
-                Email = "student1@example.com",
-                Role = UserRoles.Student
-            };
-            student.PasswordHash = hasher.HashPassword(student, "student123");
-            context.Accounts.Add(student);
+                throw new InvalidOperationException(
+                    $"Unable to assign role '{role}' to '{userName}': {string.Join("; ", roleResult.Errors.Select(e => e.Description))}");
+            }
         }
 
-        context.SaveChanges();
+        if (!string.Equals(user.Role, role, StringComparison.Ordinal))
+        {
+            user.Role = role;
+            await userManager.UpdateAsync(user);
+        }
     }
 
-    private static void SeedModernCourseCatalog(OnlineLearningAppDbContext context)
+    private static async Task SeedModernCourseCatalogAsync(OnlineLearningAppDbContext context)
     {
-        var instructor = context.Accounts.FirstOrDefault(a => a.Role == UserRoles.Instructor);
+        var instructor = await context.Accounts.FirstOrDefaultAsync(a => a.Role == UserRoles.Instructor);
         if (instructor is null)
         {
             return;
@@ -117,6 +166,20 @@ public class AppInitializer
                     ("Python Programming for Data Work", "Learn Python syntax, collections, functions, files, modules, exceptions, and reusable data-processing code."),
                     ("NumPy, Pandas & Visualization", "Clean, transform, explore, and visualize real-world datasets with the core Python data stack."),
                     ("Data Projects for AI Readiness", "Build an end-to-end data project covering preparation, exploratory analysis, feature creation, and reporting.")
+                }),
+            new CourseSeed(
+                "Professional Data Analytics with Python, SQL & Power BI",
+                "Build job-ready data analytics skills using Python, SQL, Excel and Power BI. Work through data cleaning, exploratory analysis, statistical reasoning, dashboards, business insights and an end-to-end portfolio project.",
+                CourseCategory.DataScience,
+                65000m,
+                14,
+                "python-data-science.jpg",
+                new[]
+                {
+                    ("Data Analytics Foundations & Excel", "Frame business questions, understand data types, clean spreadsheets, use formulas and pivot tables, and communicate findings clearly."),
+                    ("SQL & Python for Data Analysis", "Query relational data with SQL and use Python, pandas and NumPy for cleaning, transformation, exploratory analysis and reproducible workflows."),
+                    ("Statistics, EDA & Business Insights", "Apply descriptive statistics, correlation, hypothesis testing basics and exploratory visualisation to turn data into defensible insights."),
+                    ("Power BI & Analytics Portfolio", "Build a professional Power BI dashboard, define KPIs, model data, publish insights and present an end-to-end portfolio project.")
                 }),
             new CourseSeed(
                 "Machine Learning with Python",
@@ -213,7 +276,7 @@ public class AppInitializer
 
         foreach (var item in catalog)
         {
-            var course = context.Courses.FirstOrDefault(c => c.CourseName == item.Name);
+            var course = await context.Courses.FirstOrDefaultAsync(c => c.CourseName == item.Name);
 
             if (course is null)
             {
@@ -226,29 +289,30 @@ public class AppInitializer
                     EndDate = now.AddDays(item.DurationWeeks * 7),
                     Price = item.Price,
                     ImageURL = item.ImageUrl,
+                    Status = now < now.AddDays(item.DurationWeeks * 7) ? CourseStatus.Ongoing : CourseStatus.Completed,
                     InstructorId = instructor.Id
                 };
 
                 context.Courses.Add(course);
-                context.SaveChanges();
+                await context.SaveChangesAsync();
 
                 // CourseId is a legacy duplicate key retained for compatibility with older code.
                 course.CourseId = course.Id;
-                context.SaveChanges();
+                await context.SaveChangesAsync();
             }
 
-            SeedModulesAndQuiz(context, course, item.Modules);
+            await SeedModulesAndQuizAsync(context, course, item.Modules);
         }
     }
 
-    private static void SeedModulesAndQuiz(
+    private static async Task SeedModulesAndQuizAsync(
         OnlineLearningAppDbContext context,
         Course course,
         (string Name, string Content)[] moduleSeeds)
     {
         foreach (var moduleSeed in moduleSeeds)
         {
-            var module = context.Modules.FirstOrDefault(
+            var module = await context.Modules.FirstOrDefaultAsync(
                 m => m.CourseId == course.Id && m.ModuleName == moduleSeed.Name);
 
             if (module is null)
@@ -261,11 +325,19 @@ public class AppInitializer
                 };
 
                 context.Modules.Add(module);
-                context.SaveChanges();
+                await context.SaveChangesAsync();
+            }
+            else if (string.IsNullOrWhiteSpace(module.Content))
+            {
+                // Repair older catalog rows that were created before module content was seeded.
+                module.Content = moduleSeed.Content;
+                await context.SaveChangesAsync();
             }
 
+            await SeedRecommendedMaterialAsync(context, module);
+
             var quizName = $"{moduleSeed.Name} Checkpoint";
-            var quiz = context.Quizzes.FirstOrDefault(
+            var quiz = await context.Quizzes.FirstOrDefaultAsync(
                 q => q.ModuleId == module.ModuleId && q.QuizName == quizName);
 
             if (quiz is null)
@@ -275,11 +347,12 @@ public class AppInitializer
                     QuizName = quizName,
                     Description = $"Checkpoint assessment for {moduleSeed.Name}.",
                     DateCreated = DateTime.UtcNow,
+                    PassMark = 70m,
                     ModuleId = module.ModuleId
                 };
 
                 context.Quizzes.Add(quiz);
-                context.SaveChanges();
+                await context.SaveChangesAsync();
 
                 var question = new Question
                 {
@@ -289,7 +362,7 @@ public class AppInitializer
                 };
 
                 context.Questions.Add(question);
-                context.SaveChanges();
+                await context.SaveChangesAsync();
 
                 context.Options.AddRange(
                     new Option
@@ -311,9 +384,149 @@ public class AppInitializer
                         QuestionId = question.QuestionId
                     });
 
-                context.SaveChanges();
+                await context.SaveChangesAsync();
             }
         }
+    }
+
+    private static async Task SeedRecommendedMaterialAsync(OnlineLearningAppDbContext context, Module module)
+    {
+        var resources = GetRecommendedResources(module.ModuleName);
+        var existingTitles = await context.CourseMaterials
+            .Where(m => m.ModuleId == module.ModuleId)
+            .Select(m => m.Title)
+            .ToListAsync();
+
+        if (resources.Count == 0 || resources.All(r => existingTitles.Contains(r.Title)))
+        {
+            return;
+        }
+
+        var adminId = await context.Accounts
+            .Where(a => a.Role == UserRoles.Admin)
+            .Select(a => a.Id)
+            .FirstOrDefaultAsync();
+
+        foreach (var resource in resources)
+        {
+            if (existingTitles.Contains(resource.Title))
+            {
+                continue;
+            }
+
+            context.CourseMaterials.Add(new CourseMaterial
+            {
+                ModuleId = module.ModuleId,
+                Title = resource.Title,
+                ResourceUrl = resource.Url,
+                MaterialType = "Link",
+                Description = resource.Description,
+                UploadedById = string.IsNullOrWhiteSpace(adminId) ? null : adminId,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    private static List<(string Title, string Url, string Description)> GetRecommendedResources(string moduleName)
+    {
+        var name = moduleName.ToLowerInvariant();
+
+        if (name.Contains("power bi") || name.Contains("analytics portfolio"))
+            return new()
+            {
+                ("Microsoft Learn: Prepare and visualize data with Power BI", "https://learn.microsoft.com/en-us/training/paths/prepare-visualize-data-power-bi/", "Official Microsoft learning path covering data preparation, transformation and interactive Power BI reports."),
+                ("Microsoft Learn: Model data with Power BI", "https://learn.microsoft.com/en-us/training/paths/model-data-power-bi/", "Official Microsoft learning path covering relationships, semantic models and analytical data modeling."),
+                ("Microsoft Learn: Design effective Power BI reports", "https://learn.microsoft.com/en-us/training/modules/power-bi-effective-reports/", "Guidance for designing clear, useful and interactive Power BI reports.")
+            };
+
+        if (name.Contains("sql"))
+            return new()
+            {
+                ("PostgreSQL SQL Tutorial", "https://www.postgresql.org/docs/current/tutorial-sql.html", "Official SQL tutorial covering tables, queries, joins, aggregates, updates and deletes."),
+                ("SQLBolt Interactive Lessons", "https://sqlbolt.com/", "Interactive SQL lessons covering SELECT, filtering, joins, aggregation and database concepts."),
+                ("Microsoft Learn: Query and modify data with Transact-SQL", "https://learn.microsoft.com/en-us/training/paths/get-started-querying-with-transact-sql/", "Structured Microsoft learning material for practical SQL querying and data manipulation.")
+            };
+
+        if (name.Contains("pandas") || name.Contains("data analysis") || name.Contains("data science"))
+            return new()
+            {
+                ("pandas Getting Started", "https://pandas.pydata.org/docs/getting_started/", "Official pandas documentation for exploring, cleaning and transforming tabular data."),
+                ("NumPy User Guide", "https://numpy.org/doc/stable/user/", "Official NumPy guide covering arrays, numerical operations and scientific computing foundations."),
+                ("Matplotlib Tutorials", "https://matplotlib.org/stable/tutorials/index.html", "Official tutorials for creating charts and visualizations in Python.")
+            };
+
+        if (name.Contains("machine learning") || name.StartsWith("ml ") || name.Contains("models") || name.Contains("evaluation"))
+            return new()
+            {
+                ("scikit-learn User Guide", "https://scikit-learn.org/stable/user_guide/", "Official scikit-learn guide covering supervised and unsupervised learning, model selection and evaluation."),
+                ("Google Machine Learning Crash Course", "https://developers.google.com/machine-learning/crash-course", "Practical introductory lessons covering regression, classification, data preparation and model evaluation."),
+                ("Microsoft Learn: Create machine learning models", "https://learn.microsoft.com/en-us/training/paths/create-machine-learn-models/", "Structured learning path covering machine learning concepts and practical model development.")
+            };
+
+        if (name.Contains("cybersecurity") || name.Contains("secure") || name.Contains("security"))
+            return new()
+            {
+                ("OWASP Top 10", "https://top10.owasp.org/2025/", "OWASP's 2025 awareness document for the most important web application security risks."),
+                ("OWASP Web Security Testing Guide", "https://owasp.org/www-project-web-security-testing-guide/", "Practical guidance for understanding and testing common web application security weaknesses."),
+                ("CISA Cybersecurity Resources", "https://www.cisa.gov/topics/cyber-threats-and-advisories", "Authoritative cybersecurity resources covering threats, advisories and defensive practices.")
+            };
+
+        if (name.Contains("cloud") || name.Contains("container"))
+            return new()
+            {
+                ("Docker Get Started", "https://docs.docker.com/get-started/", "Official Docker learning material covering containers, images and basic workflows."),
+                ("Microsoft Learn: Azure Fundamentals", "https://learn.microsoft.com/en-us/training/paths/azure-fundamentals-describe-cloud-concepts/", "Cloud fundamentals covering core concepts, services, security and architecture."),
+                ("Kubernetes Basics", "https://kubernetes.io/docs/tutorials/kubernetes-basics/", "Official Kubernetes tutorial introducing container orchestration and core cluster concepts.")
+            };
+
+        if (name.Contains("ci/cd") || name.Contains("github") || name.Contains("team collaboration"))
+            return new()
+            {
+                ("GitHub Actions Quickstart", "https://docs.github.com/en/actions/get-started/quickstart", "Official GitHub guide to workflows, automation, CI and deployment pipelines."),
+                ("GitHub Skills: Test with Actions", "https://github.com/skills/test-with-actions", "Hands-on exercise for adding automated testing to a GitHub repository."),
+                ("GitHub Flow", "https://docs.github.com/en/get-started/using-github/github-flow", "Official GitHub guidance for branch-based collaboration, pull requests and code review.")
+            };
+
+        if (name.Contains("react"))
+            return new()
+            {
+                ("React Quick Start", "https://react.dev/learn", "Official React guide covering components, state, events, lists and everyday React concepts."),
+                ("React Learn: Thinking in React", "https://react.dev/learn/thinking-in-react", "Official guide to decomposing interfaces into components and managing application data flow."),
+                ("MDN: JavaScript Guide", "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide", "Comprehensive JavaScript reference material useful for building modern React applications.")
+            };
+
+        if (name.Contains("api") || name.Contains("fastapi") || name.Contains("python"))
+            return new()
+            {
+                ("Python Official Tutorial", "https://docs.python.org/3/tutorial/", "Official Python tutorial covering core language concepts and practical programming foundations."),
+                ("FastAPI Tutorial", "https://fastapi.tiangolo.com/tutorial/", "Official FastAPI tutorial covering API routes, validation, dependencies and application structure."),
+                ("MDN: HTTP Overview", "https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview", "Reference material explaining HTTP requests, responses, methods, status codes and web API fundamentals.")
+            };
+
+        if (name.Contains("rag") || name.Contains("prompt") || name.Contains("multimodal") || name.Contains("generative ai") || name.Contains("agent"))
+            return new()
+            {
+                ("Microsoft Learn: Generative AI and AI agents", "https://learn.microsoft.com/en-us/training/modules/fundamentals-generative-ai/", "Official Microsoft Learn material covering generative AI, large language models, prompts and AI agents."),
+                ("Hugging Face: NLP Course", "https://huggingface.co/learn/nlp-course/chapter1/1", "Practical course material covering transformers, datasets, tokenizers and modern NLP workflows."),
+                ("OpenAI: Prompt Engineering Guide", "https://platform.openai.com/docs/guides/prompt-engineering", "Official OpenAI guidance for designing prompts that produce more consistent and useful model outputs.")
+            };
+
+        if (name.Contains("git"))
+            return new()
+            {
+                ("GitHub Skills: Introduction to GitHub", "https://github.com/skills/introduction-to-github", "Hands-on GitHub Skills exercise covering repositories, branches, commits and pull requests."),
+                ("Pro Git Book", "https://git-scm.com/book/en/v2", "Comprehensive Git reference covering repositories, branching, merging, remotes and collaboration."),
+                ("GitHub Docs: About Git", "https://docs.github.com/en/get-started/learning-about-github/about-git", "Official GitHub explanation of Git concepts and distributed version control.")
+            };
+
+        return new()
+        {
+            ("Microsoft Learn", "https://learn.microsoft.com/training/", "Browse Microsoft's self-paced technical training library for additional study."),
+            ("freeCodeCamp", "https://www.freecodecamp.org/learn/", "Free interactive technical lessons and projects across programming, data and web development."),
+            ("MDN Web Docs", "https://developer.mozilla.org/en-US/", "Authoritative developer documentation and tutorials for web technologies.")
+        };
     }
 
     private sealed record CourseSeed(

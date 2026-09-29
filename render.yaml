@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: tba-online-learning
+    runtime: docker
+    plan: starter
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true
+    disk:
+      name: tba-online-learning-data
+      mountPath: /app/App_Data
+      sizeGB: 10
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: PORT
+        value: "10000"
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          name: tba-online-learning-cache
+          type: keyvalue
+          property: connectionString
+      - key: SeedAccounts__AdminPassword
+        sync: false
+      - key: SeedAccounts__InstructorPassword
+        sync: false
+      - key: SeedAccounts__StudentPassword
+        sync: false
+
+  - type: keyvalue
+    name: tba-online-learning-cache
+    plan: starter
+    region: oregon
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []

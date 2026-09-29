@@ -1,0 +1,47 @@
+@{
+    ViewData["Title"] = "Verify Certificate";
+    var certificate = ViewBag.Certificate as OnlineLearningApp.Models.Certificate;
+    var searchNumber = ViewBag.SearchNumber as string;
+}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="surface p-4 p-lg-5">
+                <div class="eyebrow">Credential verification</div>
+                <h1 class="h2 fw-bold mt-2">Verify a TBA Datalytics certificate</h1>
+                <p class="text-muted-custom">Enter the certificate number printed on the credential to verify its authenticity.</p>
+                <form asp-action="Index" method="get" class="row g-2 mb-4">
+                    <div class="col-md-9">
+                        <label class="visually-hidden" for="certificateNumber">Certificate number</label>
+                        <input id="certificateNumber" name="certificateNumber" value="@searchNumber" class="form-control form-control-lg" placeholder="e.g. TBA-2026-ABC12345" required />
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary btn-lg w-100" type="submit"><i class="bi bi-search me-1"></i> Verify</button>
+                    </div>
+                </form>
+
+                @if (searchNumber != null)
+                {
+                    if (certificate == null)
+                    {
+                        <div class="alert alert-danger rounded-4">
+                            <strong>Certificate not found.</strong> No certificate matching <strong>@searchNumber</strong> was found.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-success rounded-4">
+                            <i class="bi bi-patch-check-fill me-2"></i><strong>Verified credential</strong>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6"><div class="surface p-3"><div class="small text-muted-custom">Learner</div><strong>@certificate.Student.FullName</strong></div></div>
+                            <div class="col-md-6"><div class="surface p-3"><div class="small text-muted-custom">Course</div><strong>@certificate.Course.CourseName</strong></div></div>
+                            <div class="col-md-6"><div class="surface p-3"><div class="small text-muted-custom">Issued</div><strong>@certificate.IssuedAt.ToString("dd MMMM yyyy")</strong></div></div>
+                            <div class="col-md-6"><div class="surface p-3"><div class="small text-muted-custom">Certificate number</div><strong>@certificate.CertificateNumber</strong></div></div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>

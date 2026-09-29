@@ -68,20 +68,39 @@
             @foreach (var course in Model)
             {
                 var initials = course.CourseName.Length >= 2 ? course.CourseName[..2].ToUpperInvariant() : course.CourseName.ToUpperInvariant();
+                var courseIcon = course.Category switch
+                {
+                    OnlineLearningApp.CourseCategory.AI => "bi-stars",
+                    OnlineLearningApp.CourseCategory.DataScience => "bi-bar-chart-line-fill",
+                    OnlineLearningApp.CourseCategory.MachineLearning => "bi-cpu-fill",
+                    OnlineLearningApp.CourseCategory.CyberSecurity => "bi-shield-lock-fill",
+                    OnlineLearningApp.CourseCategory.CloudComputing => "bi-cloud-fill",
+                    OnlineLearningApp.CourseCategory.BigData => "bi-database-fill",
+                    OnlineLearningApp.CourseCategory.WebDevelopment => "bi-code-slash",
+                    OnlineLearningApp.CourseCategory.Programming => "bi-terminal-fill",
+                    _ => "bi-mortarboard-fill"
+                };
                 <div class="col">
-                    <article class="course-card h-100">
-                        <div class="course-image">
-                            <img src="@course.ImageURL" alt="@course.CourseName" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
-                            <div class="course-fallback" style="display:none;">@initials</div>
+                    <article class="course-card h-100 position-relative">
+                        <div class="course-image course-image-enhanced">
+                            @if (!string.IsNullOrWhiteSpace(course.ImageURL))
+                            {
+                                <img src="@course.ImageURL" alt="@course.CourseName" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                            }
+                            <div class="course-fallback" style="@(string.IsNullOrWhiteSpace(course.ImageURL) ? "display:flex;" : "display:none;")">
+                                <i class="bi @courseIcon display-3"></i>
+                                <span>@initials</span>
+                            </div>
+                            <div class="course-icon-overlay"><i class="bi @courseIcon"></i></div>
                             <span class="position-absolute top-0 start-0 m-3 category-badge">@course.Category</span>
                         </div>
                         <div class="p-4 d-flex flex-column h-100">
                             <div class="d-flex align-items-center gap-2 small text-muted-custom mb-2"><i class="bi bi-clock"></i> @((course.EndDate - course.StartDate).Days / 7) weeks <span>•</span> <span>@course.Status</span></div>
-                            <h3 class="h5 course-title">@course.CourseName</h3>
+                            <h3 class="h5 course-title"><a asp-action="Details" asp-route-id="@course.Id" class="stretched-link text-decoration-none text-reset">@course.CourseName</a></h3>
                             <p class="course-description small">@course.Description</p>
                             <div class="mt-auto d-flex justify-content-between align-items-center gap-2 pt-2">
                                 <div><div class="course-price">₦@course.Price.ToString("N0")</div><small class="text-muted-custom">Course fee</small></div>
-                                <a asp-action="Details" asp-route-id="@course.Id" class="btn btn-primary btn-sm px-3">View details <i class="bi bi-arrow-right ms-1"></i></a>
+                                <span class="btn btn-primary btn-sm px-3">View details <i class="bi bi-arrow-right ms-1"></i></span>
                             </div>
                         </div>
                     </article>
@@ -90,3 +109,13 @@
         </div>
     }
 </div>
+<style>
+.course-image-enhanced { position:relative; overflow:hidden; }
+.course-image-enhanced img { transition:transform .35s ease; }
+.course-card:hover .course-image-enhanced img { transform:scale(1.04); }
+.course-fallback { height:100%; min-height:190px; align-items:center; justify-content:center; flex-direction:column; gap:.25rem; background:linear-gradient(135deg,#0b2e59,#1f6f8b); color:#fff; font-weight:700; }
+.course-fallback span { font-size:.75rem; letter-spacing:.16em; opacity:.8; }
+.course-icon-overlay { position:absolute; right:1rem; bottom:1rem; width:48px; height:48px; display:grid; place-items:center; border-radius:14px; background:rgba(255,255,255,.92); color:var(--brand-600); box-shadow:0 8px 24px rgba(0,0,0,.12); font-size:1.25rem; }
+.course-card .stretched-link::after { position:absolute; inset:0; content:""; }
+.course-card .btn { position:relative; z-index:2; }
+</style>

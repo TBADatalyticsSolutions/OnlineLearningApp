@@ -27,6 +27,7 @@
 <div class="no-print text-center py-3">
     <button class="btn btn-primary" onclick="window.print()">Print / Save as PDF</button>
     <a class="btn btn-outline-secondary" href="@Url.Action("Index","Learning")">Back to My Learning</a>
+    <a class="btn btn-outline-primary" href="@Url.Action("Index","Verification", new { certificateNumber = Model.CertificateNumber })">Verify certificate</a>
 </div>
 <section class="certificate">
     <div class="inner">

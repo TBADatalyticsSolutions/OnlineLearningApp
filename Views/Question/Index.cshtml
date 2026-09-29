@@ -1,42 +1,26 @@
-﻿@model IEnumerable<OnlineLearningApp.Models.Question>
-
+@model IEnumerable<OnlineLearningApp.Models.Question>
 @{
-    ViewData["Title"] = "List of Questions";
+    ViewData["Title"] = "Questions";
 }
-
-<div class="container mt-4">
-    <h2 class="text-center mb-4">List of Questions</h2>
-    <div class="row">
-        <div class="col-md-10 offset-md-1">
-            <table class="table table-striped table-hover">
-                <thead>
-                    <tr class="text-center">
-                        <th>@Html.DisplayNameFor(model => model.QuestionText)</th>
-                        <th>@Html.DisplayNameFor(model => model.QuestionType)</th>
-                        <th>@Html.DisplayNameFor(model => model.QuizId)</th>
-                        @if (User?.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
-                        {
-                            <th>Actions</th>
-                        }
-                    </tr>
-                </thead>
+<div class="container-fluid px-3 px-lg-4 py-4 py-lg-5">
+    <div class="mb-4">
+        <div class="eyebrow">Academic content</div>
+        <h1 class="section-title h2 mb-1">Question bank</h1>
+        <p class="text-muted-custom mb-0">Review assessment questions used by course checkpoints.</p>
+    </div>
+    <div class="surface p-0 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead><tr><th class="px-4 py-3">Question</th><th>Type</th><th>Quiz</th></tr></thead>
                 <tbody>
-                    @foreach (var item in Model)
-                    {
-                        <tr class="text-center">
-                            <td>@Html.DisplayFor(modelItem => item.QuestionText)</td>
-                            <td>@Html.DisplayFor(modelItem => item.QuestionType)</td>
-                            <td>@Html.DisplayFor(modelItem => item.QuizId)</td>
-                            @if (User?.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
-                            {
-                                <td>
-                                    <a class="btn btn-outline-primary btn-sm" asp-action="Edit" asp-route-id="@item.QuestionId"><i class="bi bi-pencil-square"></i> Edit</a>
-                                    <a class="btn btn-outline-info btn-sm" asp-action="Details" asp-route-id="@item.QuestionId"><i class="bi bi-eye"></i> Details</a>
-                                    <a class="btn btn-danger btn-sm text-white" asp-action="Delete" asp-route-id="@item.QuestionId"><i class="bi bi-trash"></i> Delete</a>
-                                </td>
-                            }
-                        </tr>
-                    }
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="px-4 fw-semibold">@item.QuestionText</td>
+                        <td><span class="badge rounded-pill bg-light text-dark">@item.QuestionType</span></td>
+                        <td>#@item.QuizId</td>
+                    </tr>
+                }
                 </tbody>
             </table>
         </div>

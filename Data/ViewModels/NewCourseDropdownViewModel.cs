@@ -1,20 +1,13 @@
-﻿
 namespace OnlineLearningApp;
 
 public class NewCourseDropdownViewModel
 {
-    public NewCourseDropdownViewModel()
-    {
-        Instructors = new List<User>();
-        Categories = new List<string>();
-    }
-
-    public List<User> Instructors { get; set; }
-    public List<string> Categories { get; set; }
-
+    public List<User> Instructors { get; set; } = new();
+    public List<CourseCategory> Categories { get; set; } = new();
 }
+
 public class User
 {
-    public string UserId { get; set; } = default!;
-    public string FullName { get; set; } = default!;
+    public string UserId { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
 }

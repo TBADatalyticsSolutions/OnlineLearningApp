@@ -22,6 +22,7 @@ public class OnlineLearningAppDbContext : IdentityDbContext<Account>
     public DbSet<StudentModuleProgress> StudentModuleProgress { get; set; }
     public DbSet<QuizAttempt> QuizAttempts { get; set; }
     public DbSet<Certificate> Certificates { get; set; }
+    public DbSet<CourseMaterial> CourseMaterials { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -36,6 +37,10 @@ public class OnlineLearningAppDbContext : IdentityDbContext<Account>
             .HasMany(a => a.Orders)
             .WithOne(o => o.Account)
             .HasForeignKey(o => o.AccountId);
+
+        modelBuilder.Entity<Course>()
+            .Property(c => c.RequireAllQuizzesPassed)
+            .HasDefaultValue(true);
 
         modelBuilder.Entity<Course>()
             .HasOne(c => c.Instructor)
@@ -56,6 +61,19 @@ public class OnlineLearningAppDbContext : IdentityDbContext<Account>
         modelBuilder.Entity<OrderItem>()
             .HasOne(oi => oi.Order).WithMany(o => o.OrderItems)
             .HasForeignKey(oi => oi.OrderId);
+
+        modelBuilder.Entity<CourseMaterial>()
+            .HasOne(m => m.Module)
+            .WithMany(module => module.Materials)
+            .HasForeignKey(m => m.ModuleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<CourseMaterial>()
+            .HasOne(m => m.UploadedBy)
+            .WithMany()
+            .HasForeignKey(m => m.UploadedById)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<Quiz>()
             .HasOne(q => q.Module).WithMany(m => m.Quizzes)
@@ -79,6 +97,9 @@ public class OnlineLearningAppDbContext : IdentityDbContext<Account>
             .HasOne(sc => sc.Course).WithMany(c => c.StudentCourses)
             .HasForeignKey(sc => sc.CourseId).OnDelete(DeleteBehavior.Cascade);
 
+        modelBuilder.Entity<StudentCourse>()
+            .HasIndex(sc => sc.StudentId);
+
         modelBuilder.Entity<StudentModuleProgress>()
             .HasIndex(p => new { p.StudentId, p.ModuleId }).IsUnique();
 
@@ -97,6 +118,18 @@ public class OnlineLearningAppDbContext : IdentityDbContext<Account>
         modelBuilder.Entity<QuizAttempt>()
             .HasOne(a => a.Quiz).WithMany()
             .HasForeignKey(a => a.QuizId).OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Course>()
+            .Property(c => c.Price).HasPrecision(18, 2);
+
+        modelBuilder.Entity<Order>()
+            .Property(o => o.TotalAmount).HasPrecision(18, 2);
+
+        modelBuilder.Entity<OrderItem>()
+            .Property(oi => oi.Price).HasPrecision(18, 2);
+
+        modelBuilder.Entity<Quiz>()
+            .Property(q => q.PassMark).HasPrecision(5, 2);
 
         modelBuilder.Entity<QuizAttempt>()
             .Property(a => a.Percentage).HasPrecision(5, 2);

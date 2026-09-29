@@ -3,20 +3,22 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using OnlineLearningApp.Data;
+using OnlineLearningApp.Data.Services;
 using OnlineLearningApp.Models;
 using System.Security.Claims;
 
 namespace OnlineLearningApp.Controllers;
 
-[Authorize(Roles = UserRoles.Admin)]
 public class CourseController : Controller
 {
     private readonly ICourseService _service;
+    private readonly ICourseCompletionService _completionService;
     private readonly OnlineLearningAppDbContext _context;
 
-    public CourseController(ICourseService service, OnlineLearningAppDbContext context)
+    public CourseController(ICourseService service, ICourseCompletionService completionService, OnlineLearningAppDbContext context)
     {
         _service = service;
+        _completionService = completionService;
         _context = context;
     }
 
@@ -28,7 +30,7 @@ public class CourseController : Controller
     }
 
     [AllowAnonymous]
-    public async Task<IActionResult> Filter(string searchString)
+    public async Task<IActionResult> Filter(string? searchString)
     {
         var allCourses = await _service.GetAllAsync();
 
@@ -40,7 +42,7 @@ public class CourseController : Controller
                 .Where(course =>
                     course.CourseName.Contains(term, StringComparison.CurrentCultureIgnoreCase) ||
                     course.Description.Contains(term, StringComparison.CurrentCultureIgnoreCase) ||
-                    course.Category.ToString().Contains(term, StringComparison.CurrentCultureIgnoreCase))
+                    course.Category.GetDescription().Contains(term, StringComparison.CurrentCultureIgnoreCase))
                 .ToList();
         }
 
@@ -57,7 +59,7 @@ public class CourseController : Controller
                 .ThenInclude(m => m.Quizzes)
             .FirstOrDefaultAsync(c => c.Id == id);
 
-        if (course == null)
+        if (course is null)
         {
             return View("NotFound");
         }
@@ -89,7 +91,7 @@ public class CourseController : Controller
         var enrollment = await _context.StudentCourses
             .FirstOrDefaultAsync(sc => sc.StudentId == studentId && sc.CourseId == id);
 
-        if (enrollment == null)
+        if (enrollment is null)
         {
             TempData["Error"] = "Please enroll in this course before starting the lessons.";
             return RedirectToAction(nameof(Details), new { id });
@@ -97,12 +99,15 @@ public class CourseController : Controller
 
         var course = await _context.Courses
             .AsNoTracking()
+            .AsSplitQuery()
             .Include(c => c.Instructor)
             .Include(c => c.Modules.OrderBy(m => m.ModuleId))
                 .ThenInclude(m => m.Quizzes)
+            .Include(c => c.Modules)
+                .ThenInclude(m => m.Materials)
             .FirstOrDefaultAsync(c => c.Id == id);
 
-        if (course == null)
+        if (course is null)
         {
             return View("NotFound");
         }
@@ -139,7 +144,7 @@ public class CourseController : Controller
         var enrollment = await _context.StudentCourses
             .FirstOrDefaultAsync(sc => sc.StudentId == studentId && sc.CourseId == courseId);
 
-        if (enrollment == null)
+        if (enrollment is null)
         {
             TempData["Error"] = "You must be enrolled in this course before completing lessons.";
             return RedirectToAction(nameof(Details), new { id = courseId });
@@ -156,54 +161,34 @@ public class CourseController : Controller
         var progress = await _context.StudentModuleProgress
             .FirstOrDefaultAsync(p => p.StudentId == studentId && p.ModuleId == moduleId);
 
-        if (progress == null)
+        if (progress is null)
         {
-            progress = new StudentModuleProgress
+            _context.StudentModuleProgress.Add(new StudentModuleProgress
             {
                 StudentId = studentId,
                 ModuleId = moduleId,
                 StartedAt = DateTime.UtcNow,
                 CompletedAt = DateTime.UtcNow
-            };
-
-            _context.StudentModuleProgress.Add(progress);
+            });
         }
-        else if (!progress.CompletedAt.HasValue)
+        else
         {
-            progress.CompletedAt = DateTime.UtcNow;
+            progress.CompletedAt ??= DateTime.UtcNow;
         }
 
         await _context.SaveChangesAsync();
 
-        var moduleCount = await _context.Modules.CountAsync(m => m.CourseId == courseId);
-        var completedCount = await _context.StudentModuleProgress
-            .Where(p => p.StudentId == studentId && p.CompletedAt != null)
-            .Join(_context.Modules.Where(m => m.CourseId == courseId),
-                progressRow => progressRow.ModuleId,
-                module => module.ModuleId,
-                (_, _) => 1)
-            .CountAsync();
+        var completion = await _completionService.EvaluateAsync(studentId, courseId);
 
-        if (moduleCount > 0 && completedCount >= moduleCount)
+        if (completion.IsCompleted)
         {
-            enrollment.CompletedAt ??= DateTime.UtcNow;
-
-            var certificateExists = await _context.Certificates
-                .AnyAsync(c => c.StudentId == studentId && c.CourseId == courseId);
-
-            if (!certificateExists)
-            {
-                _context.Certificates.Add(new Certificate
-                {
-                    CertificateNumber = $"TBA-{DateTime.UtcNow:yyyy}-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}",
-                    StudentId = studentId,
-                    CourseId = courseId,
-                    IssuedAt = DateTime.UtcNow
-                });
-            }
-
-            await _context.SaveChangesAsync();
             TempData["Success"] = "Course completed. Your certificate is now available.";
+        }
+        else if (completion.ModulesCompleted)
+        {
+            TempData["Success"] = completion.QuizzesCompleted
+                ? "All course requirements are complete."
+                : "All modules are complete. Pass the required checkpoint assessments to unlock your certificate.";
         }
         else
         {
@@ -228,7 +213,7 @@ public class CourseController : Controller
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == id);
 
-        if (course == null)
+        if (course is null)
         {
             return View("NotFound");
         }
@@ -259,11 +244,7 @@ public class CourseController : Controller
     [Authorize(Roles = UserRoles.Admin)]
     public async Task<IActionResult> Create()
     {
-        var courseDropdownsData = await _service.GetNewCourseDropdownsValues();
-
-        ViewBag.Categories = new SelectList(courseDropdownsData.Categories, "Id", "Name");
-        ViewBag.Instructors = new SelectList(courseDropdownsData.Instructors, "UserId", "FullName");
-
+        await PopulateCourseDropdownsAsync();
         return View();
     }
 
@@ -271,17 +252,16 @@ public class CourseController : Controller
     [Authorize(Roles = UserRoles.Admin)]
     public async Task<IActionResult> Create(NewCourseViewModel course)
     {
+        await ValidateInstructorAsync(course.InstructorId);
+
         if (!ModelState.IsValid)
         {
-            var courseDropdownsData = await _service.GetNewCourseDropdownsValues();
-
-            ViewBag.Categories = new SelectList(courseDropdownsData.Categories, "Id", "Name");
-            ViewBag.Instructors = new SelectList(courseDropdownsData.Instructors, "UserId", "FullName");
-
+            await PopulateCourseDropdownsAsync(course.InstructorId, course.Category);
             return View(course);
         }
 
         await _service.AddNewCourseAsync(course);
+        TempData["Success"] = $"Course '{course.CourseName}' was created successfully.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -289,7 +269,7 @@ public class CourseController : Controller
     public async Task<IActionResult> Edit(int id)
     {
         var courseDetails = await _service.GetCourseByIdAsync(id);
-        if (courseDetails == null)
+        if (courseDetails is null)
         {
             return View("NotFound");
         }
@@ -304,14 +284,13 @@ public class CourseController : Controller
             EndDate = courseDetails.EndDate,
             ImageURL = courseDetails.ImageURL,
             Category = courseDetails.Category,
+            Status = courseDetails.Status,
             InstructorId = courseDetails.InstructorId,
-            ModuleIds = courseDetails.Courses_Modules.Select(n => n.ModuleId).ToList(),
+            RequireAllQuizzesPassed = courseDetails.RequireAllQuizzesPassed,
+            ModuleIds = courseDetails.Courses_Modules.Select(n => n.ModuleId).ToList()
         };
 
-        var courseDropdownsData = await _service.GetNewCourseDropdownsValues();
-        ViewBag.Categories = new SelectList(courseDropdownsData.Categories, "Id", "Name");
-        ViewBag.Instructors = new SelectList(courseDropdownsData.Instructors, "Id", "FullName");
-
+        await PopulateCourseDropdownsAsync(response.InstructorId, response.Category);
         return View(response);
     }
 
@@ -324,17 +303,63 @@ public class CourseController : Controller
             return View("NotFound");
         }
 
+        await ValidateInstructorAsync(course.InstructorId);
+
         if (!ModelState.IsValid)
         {
-            var courseDropdownsData = await _service.GetNewCourseDropdownsValues();
-
-            ViewBag.Categories = new SelectList(courseDropdownsData.Categories, "Id", "Name");
-            ViewBag.Instructors = new SelectList(courseDropdownsData.Instructors, "Id", "FullName");
-
+            await PopulateCourseDropdownsAsync(course.InstructorId, course.Category);
             return View(course);
         }
 
         await _service.UpdateCourseAsync(course);
+        TempData["Success"] = $"Course '{course.CourseName}' was updated successfully.";
         return RedirectToAction(nameof(Index));
+    }
+
+    private async Task ValidateInstructorAsync(string instructorId)
+    {
+        if (string.IsNullOrWhiteSpace(instructorId))
+        {
+            ModelState.AddModelError(nameof(NewCourseViewModel.InstructorId), "Please select an instructor.");
+            return;
+        }
+
+        var instructorRoleId = await _context.Roles
+            .Where(r => r.Name == UserRoles.Instructor)
+            .Select(r => r.Id)
+            .FirstOrDefaultAsync();
+
+        var isInstructor = instructorRoleId is not null &&
+            await _context.UserRoles.AnyAsync(ur => ur.UserId == instructorId && ur.RoleId == instructorRoleId);
+
+        if (!isInstructor)
+        {
+            ModelState.AddModelError(nameof(NewCourseViewModel.InstructorId), "The selected account is not an instructor.");
+        }
+    }
+
+    private async Task PopulateCourseDropdownsAsync(
+        string? selectedInstructorId = null,
+        CourseCategory? selectedCategory = null)
+    {
+        var dropdownData = await _service.GetNewCourseDropdownsValues();
+
+        ViewBag.Categories = dropdownData.Categories
+            .Select(category => new SelectListItem
+            {
+                Value = ((int)category).ToString(),
+                Text = category.GetDescription(),
+                Selected = selectedCategory.HasValue && category == selectedCategory.Value
+            })
+            .ToList();
+
+        ViewBag.Instructors = dropdownData.Instructors
+            .Select(instructor => new SelectListItem
+            {
+                Value = instructor.UserId,
+                Text = instructor.FullName,
+                Selected = instructor.UserId == selectedInstructorId
+            })
+            .ToList();
     }
 }

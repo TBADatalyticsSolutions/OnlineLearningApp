@@ -18,5 +18,6 @@ public class QuizAttempt
     public int Score { get; set; }
     public int TotalQuestions { get; set; }
     public decimal Percentage { get; set; }
+    public bool Passed { get; set; }
     public DateTime AttemptedAt { get; set; }
 }

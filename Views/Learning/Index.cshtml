@@ -1,7 +1,6 @@
-@model IEnumerable<OnlineLearningApp.Models.Course>
+@model OnlineLearningApp.Models.LearningDashboardViewModel
 @{
     ViewData["Title"] = "My Learning";
-    var courses = Model.ToList();
 }
 <div class="container-fluid px-3 px-lg-4 py-4 py-lg-5">
     <div class="row g-4">
@@ -9,7 +8,7 @@
             <div class="catalog-hero mb-4">
                 <div class="eyebrow" style="color:#7fc0ff;">Student workspace</div>
                 <h1 class="display-6 fw-bold mt-2">Welcome back, @User.Identity?.Name.</h1>
-                <p class="lead mb-0" style="color:#cfe1f7;">Keep building your skills. Your next milestone is one lesson away.</p>
+                <p class="lead mb-0" style="color:#cfe1f7;">Track your progress, assessments and course milestones in one place.</p>
             </div>
 
             <div class="d-flex justify-content-between align-items-end mb-3">
@@ -17,16 +16,20 @@
                 <a asp-controller="Course" asp-action="Index" class="btn btn-soft btn-sm">Browse catalog</a>
             </div>
 
-            @if (!courses.Any()) {
+            @if (!Model.Courses.Any())
+            {
                 <div class="empty-state">
                     <i class="bi bi-journal-bookmark display-4 text-primary"></i>
                     <h2 class="h4 fw-bold mt-3">Your learning library is empty</h2>
                     <p class="text-muted-custom">Choose a course and start building practical skills.</p>
                     <a asp-controller="Course" asp-action="Index" class="btn btn-primary">Explore courses</a>
                 </div>
-            } else {
+            }
+            else
+            {
                 <div class="d-grid gap-3">
-                    @foreach (var course in courses) {
+                    @foreach (var course in Model.Courses)
+                    {
                         <div class="dashboard-card p-3 p-lg-4">
                             <div class="row align-items-center g-3">
                                 <div class="col-md-3">
@@ -37,12 +40,24 @@
                                 <div class="col-md-6">
                                     <span class="category-badge">@course.Category</span>
                                     <h3 class="h5 fw-bold mt-2 mb-1">@course.CourseName</h3>
-                                    <p class="small text-muted-custom mb-2">@(course.Modules.Count) modules · @course.Modules.Sum(m => m.Quizzes.Count) checkpoints</p>
-                                    <div class="progress"><div class="progress-bar" style="width:0%"></div></div>
-                                    <small class="text-muted-custom">0% complete</small>
+                                    <p class="small text-muted-custom mb-2">@course.CompletedModules of @course.TotalModules modules · @course.QuizCount checkpoints</p>
+                                    <div class="progress">
+                                        <div class="progress-bar" style="width:@course.ProgressPercentage%"></div>
+                                    </div>
+                                    <div class="d-flex justify-content-between mt-1">
+                                        <small class="text-muted-custom">@course.ProgressPercentage% complete</small>
+                                        @if (course.IsCompleted)
+                                        {
+                                            <small class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i>Completed</small>
+                                        }
+                                    </div>
                                 </div>
                                 <div class="col-md-3 text-md-end">
-                                    <a asp-controller="Course" asp-action="Learn" asp-route-id="@course.Id" class="btn btn-primary">Continue <i class="bi bi-arrow-right ms-1"></i></a>
+                                    @if (course.IsCompleted)
+                                    {
+                                        <a asp-controller="Certificate" asp-action="View" asp-route-courseId="@course.CourseId" class="btn btn-outline-primary me-1">Certificate</a>
+                                    }
+                                    <a asp-controller="Course" asp-action="Learn" asp-route-id="@course.CourseId" class="btn btn-primary">Continue <i class="bi bi-arrow-right ms-1"></i></a>
                                 </div>
                             </div>
                         </div>
@@ -50,19 +65,32 @@
                 </div>
             }
         </div>
+
         <div class="col-xl-4">
             <div class="dashboard-card p-4 mb-3">
                 <div class="eyebrow">Learning overview</div>
                 <div class="row g-3 mt-1">
-                    <div class="col-6"><div class="surface stat-card h-100"><div class="stat-icon mb-2"><i class="bi bi-journal-bookmark"></i></div><strong class="fs-4">@courses.Count</strong><div class="small text-muted-custom">Enrolled</div></div></div>
-                    <div class="col-6"><div class="surface stat-card h-100"><div class="stat-icon mb-2"><i class="bi bi-check2-circle"></i></div><strong class="fs-4">0</strong><div class="small text-muted-custom">Completed</div></div></div>
+                    <div class="col-6"><div class="surface stat-card h-100"><div class="stat-icon mb-2"><i class="bi bi-journal-bookmark"></i></div><strong class="fs-4">@Model.EnrolledCount</strong><div class="small text-muted-custom">Enrolled</div></div></div>
+                    <div class="col-6"><div class="surface stat-card h-100"><div class="stat-icon mb-2"><i class="bi bi-check2-circle"></i></div><strong class="fs-4">@Model.CompletedCount</strong><div class="small text-muted-custom">Completed</div></div></div>
+                    <div class="col-6"><div class="surface stat-card h-100"><div class="stat-icon mb-2"><i class="bi bi-ui-checks"></i></div><strong class="fs-4">@Model.TotalQuizAttempts</strong><div class="small text-muted-custom">Quiz attempts</div></div></div>
+                    <div class="col-6"><div class="surface stat-card h-100"><div class="stat-icon mb-2"><i class="bi bi-graph-up-arrow"></i></div><strong class="fs-4">@Model.AverageQuizPercentage.ToString("0.00")%</strong><div class="small text-muted-custom">Average score</div></div></div>
                 </div>
             </div>
+
             <div class="dashboard-card p-4">
-                <div class="eyebrow">Why keep learning?</div>
-                <div class="d-flex gap-3 py-3 border-bottom"><div class="stat-icon flex-shrink-0"><i class="bi bi-lightning-charge"></i></div><div><strong>Practical skills</strong><div class="small text-muted-custom">Build knowledge you can apply.</div></div></div>
-                <div class="d-flex gap-3 py-3 border-bottom"><div class="stat-icon flex-shrink-0"><i class="bi bi-graph-up-arrow"></i></div><div><strong>Visible progress</strong><div class="small text-muted-custom">Track milestones as you learn.</div></div></div>
-                <div class="d-flex gap-3 pt-3"><div class="stat-icon flex-shrink-0"><i class="bi bi-award"></i></div><div><strong>Earn recognition</strong><div class="small text-muted-custom">Complete learning pathways.</div></div></div>
+                <div class="eyebrow">Learning momentum</div>
+                <div class="d-flex gap-3 py-3 border-bottom">
+                    <div class="stat-icon flex-shrink-0"><i class="bi bi-lightning-charge"></i></div>
+                    <div><strong>Practical skills</strong><div class="small text-muted-custom">Build knowledge you can apply.</div></div>
+                </div>
+                <div class="d-flex gap-3 py-3 border-bottom">
+                    <div class="stat-icon flex-shrink-0"><i class="bi bi-graph-up-arrow"></i></div>
+                    <div><strong>Visible progress</strong><div class="small text-muted-custom">Your completion data updates as you learn.</div></div>
+                </div>
+                <div class="d-flex gap-3 pt-3">
+                    <div class="stat-icon flex-shrink-0"><i class="bi bi-award"></i></div>
+                    <div><strong>Earn recognition</strong><div class="small text-muted-custom">Complete a pathway to unlock its certificate.</div></div>
+                </div>
             </div>
         </div>
     </div>

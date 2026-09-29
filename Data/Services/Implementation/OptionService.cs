@@ -13,7 +13,7 @@ public class OptionService : IOptionService
         _context = context;
     }
 
-    public async Task<Option> GetOptionByIdAsync(int id)
+    public async Task<Option?> GetOptionByIdAsync(int id)
     {
         return await _context.Options.FindAsync(id);
     }

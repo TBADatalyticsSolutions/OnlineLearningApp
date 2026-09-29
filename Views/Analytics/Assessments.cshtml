@@ -1,0 +1,33 @@
+@model OnlineLearningApp.Models.StudentAssessmentAnalyticsViewModel
+@{
+    ViewData["Title"] = "Assessment analytics";
+}
+<div class="container-fluid px-3 px-lg-4 py-4 py-lg-5">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div><div class="eyebrow">Performance</div><h1 class="section-title h2 mb-1">Assessment analytics</h1><p class="text-muted-custom mb-0">Track your attempts, best scores and checkpoint performance.</p></div>
+        <a asp-controller="Quiz" asp-action="History" class="btn btn-soft">Assessment history</a>
+    </div>
+    <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="dashboard-card p-4"><div class="small text-muted-custom">Attempts</div><strong class="display-6">@Model.TotalAttempts</strong></div></div>
+        <div class="col-md-3"><div class="dashboard-card p-4"><div class="small text-muted-custom">Passes</div><strong class="display-6 text-success">@Model.PassedAttempts</strong></div></div>
+        <div class="col-md-3"><div class="dashboard-card p-4"><div class="small text-muted-custom">Average</div><strong class="display-6">@Model.AveragePercentage.ToString("0.00")%</strong></div></div>
+        <div class="col-md-3"><div class="dashboard-card p-4"><div class="small text-muted-custom">Best score</div><strong class="display-6 text-primary">@Model.BestPercentage.ToString("0.00")%</strong></div></div>
+    </div>
+    <div class="surface p-0 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead><tr><th class="px-4 py-3">Course</th><th>Assessment</th><th>Attempts</th><th>Best</th><th>Latest</th><th>Status</th></tr></thead>
+                <tbody>
+                @foreach (var row in Model.Assessments)
+                {
+                    <tr>
+                        <td class="px-4">@row.CourseName</td><td class="fw-semibold">@row.QuizName</td><td>@row.Attempts</td>
+                        <td>@row.BestPercentage.ToString("0.00")%</td><td>@row.LatestPercentage.ToString("0.00")%</td>
+                        <td>@if(row.Passed){<span class="badge rounded-pill bg-success-subtle text-success">Passed</span>}else{<span class="badge rounded-pill bg-warning-subtle text-warning">Needs another attempt</span>}</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

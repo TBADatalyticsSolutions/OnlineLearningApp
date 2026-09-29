@@ -1,41 +1,29 @@
-@model IEnumerable<Account>
-
+@model IEnumerable<OnlineLearningApp.Models.Account>
 @{
-    ViewData["Title"] = "List of Users";
+    ViewData["Title"] = "Users";
 }
-
-<h2>@ViewData["Title"]</h2>
-
-<table class="table">
-    <thead>
-        <tr>
-            <th>@Html.DisplayNameFor(model => model.First().UserName)</th>
-            <th>@Html.DisplayNameFor(model => model.First().FullName)</th>
-            <th>@Html.DisplayNameFor(model => model.First().Email)</th>
-            <th>@Html.DisplayNameFor(model => model.First().Role)</th>
-            @if (User.Identity != null && User.IsInRole("Admin"))
-            {
-                <th>Actions</th>
-            }
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@Html.DisplayFor(modelItem => item.UserName)</td>
-                <td>@Html.DisplayFor(modelItem => item.FullName)</td>
-                <td>@Html.DisplayFor(modelItem => item.Email)</td>
-                <td>@Html.DisplayFor(modelItem => item.Role)</td>
-                @if (User.Identity != null && User.IsInRole("Admin"))
+<div class="container-fluid px-3 px-lg-4 py-4 py-lg-5">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div><div class="eyebrow">Administration</div><h1 class="section-title h2 mb-1">User directory</h1><p class="text-muted-custom mb-0">Review platform accounts and their assigned application roles.</p></div>
+        <span class="badge rounded-pill bg-primary-subtle text-primary px-3 py-2">@Model.Count() users</span>
+    </div>
+    <div class="surface p-0 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead><tr><th class="px-4 py-3">Name</th><th>Email</th><th>Username</th><th>Role</th><th class="px-4">Status</th></tr></thead>
+                <tbody>
+                @foreach (var user in Model)
                 {
-                    <td>
-                        <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                        <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                        <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-                    </td>
+                    <tr>
+                        <td class="px-4 fw-semibold">@user.FullName</td>
+                        <td>@user.Email</td>
+                        <td>@user.UserName</td>
+                        <td><span class="badge rounded-pill bg-light text-dark">@user.Role</span></td>
+                        <td class="px-4">@if (user.EmailConfirmed) { <span class="text-success"><i class="bi bi-check-circle me-1"></i>Confirmed</span> } else { <span class="text-warning"><i class="bi bi-clock me-1"></i>Unconfirmed</span> }</td>
+                    </tr>
                 }
-            </tr>
-        }
-    </tbody>
-</table>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -27,7 +27,32 @@
                         <div id="module-@module.ModuleId" class="collapse">
                             <div class="lesson-panel">
                                 <div class="eyebrow mb-2">Lesson content</div>
-                                <p class="text-muted-custom mb-4">@module.Content</p>
+                                <div class="lesson-content mb-4">@module.Content</div>
+
+                                @if (module.Materials.Any())
+                                {
+                                    <div class="mb-4">
+                                        <div class="eyebrow mb-2">Learning materials</div>
+                                        <div class="d-flex flex-column gap-2">
+                                            @foreach (var material in module.Materials.OrderBy(m => m.CreatedAt))
+                                            {
+                                                <a asp-controller="Materials" asp-action="Open" asp-route-id="@material.Id"
+                                                   class="surface p-3 d-flex align-items-center gap-3 text-decoration-none text-reset"
+                                                   target="_blank">
+                                                    <span class="brand-mark flex-shrink-0"><i class="bi @(material.MaterialType == "File" ? "bi-file-earmark-arrow-down" : "bi-box-arrow-up-right")"></i></span>
+                                                    <span class="flex-grow-1">
+                                                        <strong class="d-block">@material.Title</strong>
+                                                        @if (!string.IsNullOrWhiteSpace(material.Description))
+                                                        {
+                                                            <span class="small text-muted-custom">@material.Description</span>
+                                                        }
+                                                    </span>
+                                                    <i class="bi bi-chevron-right text-muted"></i>
+                                                </a>
+                                            }
+                                        </div>
+                                    </div>
+                                }
                                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 p-3 rounded-3 border bg-light-subtle">
                                     <div>
                                         <strong>@(completedModuleIds.Contains(module.ModuleId) ? "Module completed" : "Ready to complete?")</strong>

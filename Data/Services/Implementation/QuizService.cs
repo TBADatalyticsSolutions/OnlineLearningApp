@@ -11,7 +11,7 @@ public class QuizService : IQuizService
     {
         _context = context;
     }
-    public async Task<Quiz> GetQuizByIdAsync(int id)
+    public async Task<Quiz?> GetQuizByIdAsync(int id)
     {
         return await _context.Quizzes.FindAsync(id);
     }
