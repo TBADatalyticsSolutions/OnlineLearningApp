@@ -19,6 +19,7 @@ public sealed class CourseCompletionService : ICourseCompletionService
         bool issueCertificate = true)
     {
         var course = await _context.Courses
+            .AsSplitQuery()
             .Include(c => c.Modules)
                 .ThenInclude(m => m.Quizzes)
             .FirstOrDefaultAsync(c => c.Id == courseId);
