@@ -17,6 +17,7 @@
                     <i class="bi @(passed ? "bi-check-circle-fill" : "bi-exclamation-circle-fill") me-2"></i>
                     <strong>Assessment submitted.</strong> You scored @Model.Score / @Model.TotalQuestions (@percentage%).
                     <span class="ms-2">@(passed ? "Passed" : "Not passed yet")</span>
+                    <div class="mt-2 small">@(passed ? "You have demonstrated the required mastery for this checkpoint." : "Review the marked answers below and retry the assessment after revisiting the related lesson.")</div>
                 </div>
             }
             <form asp-action="Submit" method="post">
@@ -30,9 +31,15 @@
                         <div class="d-grid gap-2">
                         @foreach(var option in question.Options) {
                             var selected=Model.Answers.TryGetValue(question.QuestionId,out var answer) && answer==option.OptionId;
-                            <label class="answer-option d-flex align-items-start gap-3">
+                            var reviewClass = Model.Submitted
+                                ? (option.IsCorrect ? "border-success bg-success-subtle" : (selected ? "border-danger bg-danger-subtle" : ""))
+                                : "";
+                            <label class="answer-option d-flex align-items-start gap-3 @reviewClass">
                                 <input class="form-check-input mt-1" type="radio" name="Answers[@question.QuestionId]" value="@option.OptionId" @(selected ? "checked" : "") />
-                                <span>@option.OptionText</span>
+                                <span class="flex-grow-1">@option.OptionText
+                                    @if (Model.Submitted && option.IsCorrect) { <span class="badge text-bg-success ms-2">Correct answer</span> }
+                                    @if (Model.Submitted && selected && !option.IsCorrect) { <span class="badge text-bg-danger ms-2">Your answer</span> }
+                                </span>
                             </label>
                         }
                         </div>
@@ -40,7 +47,11 @@
                 }
                 <div class="d-flex flex-wrap justify-content-between gap-2">
                     <a asp-controller="Course" asp-action="Learn" asp-route-id="@Model.CourseId" class="btn btn-soft btn-lg">Save & return</a>
-                    <button type="submit" class="btn btn-primary btn-lg px-4" @(Model.Submitted ? "disabled" : "")><i class="bi bi-check2-circle me-1"></i> Submit assessment</button>
+                    @if (Model.Submitted) {
+                        <a asp-action="Take" asp-route-id="@Model.QuizId" class="btn btn-primary btn-lg px-4"><i class="bi bi-arrow-repeat me-1"></i> Retry assessment</a>
+                    } else {
+                        <button type="submit" class="btn btn-primary btn-lg px-4"><i class="bi bi-check2-circle me-1"></i> Submit assessment</button>
+                    }
                 </div>
             </form>
         </div>
