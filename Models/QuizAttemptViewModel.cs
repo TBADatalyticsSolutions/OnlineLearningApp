@@ -10,6 +10,7 @@ public class QuizAttemptViewModel
     public decimal PassMark { get; set; } = 70m;
     public List<QuizQuestionViewModel> Questions { get; set; } = new();
     public Dictionary<int, int> Answers { get; set; } = new();
+    public List<int> SelectedQuestionIds { get; set; } = new();
     public int Score { get; set; }
     public int TotalQuestions { get; set; }
     public bool Submitted { get; set; }
