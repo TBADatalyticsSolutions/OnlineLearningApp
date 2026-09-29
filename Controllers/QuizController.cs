@@ -9,12 +9,16 @@ namespace OnlineLearningApp.Controllers;
 
 public class QuizController : Controller
 {
+    private const int QuestionsPerAttempt = 5;
     private readonly OnlineLearningAppDbContext _context;
 
     public QuizController(OnlineLearningAppDbContext context)
     {
         _context = context;
     }
+
+    private string QuestionSetKey(string studentId, int quizId)
+        => $"QuizQuestionSet:{studentId}:{quizId}";
 
     [Authorize(Roles = UserRoles.Admin + "," + UserRoles.Instructor)]
     [HttpGet]
@@ -100,6 +104,11 @@ public class QuizController : Controller
             .FirstOrDefaultAsync();
 
         var viewModel = BuildViewModel(quiz);
+        var questionSetKey = QuestionSetKey(studentId, id);
+        HttpContext.Session.SetString(
+            questionSetKey,
+            string.Join(",", viewModel.SelectedQuestionIds));
+
         if (latestAttempt is not null)
         {
             viewModel.LastScore = latestAttempt.Score;
@@ -145,8 +154,13 @@ public class QuizController : Controller
         }
 
         var answers = model.Answers ?? new Dictionary<int, int>();
-        var selectedIds = model.SelectedQuestionIds
-            .Distinct()
+        var storedQuestionSet = HttpContext.Session.GetString(
+            QuestionSetKey(studentId, quiz.QuizId));
+
+        var selectedIds = (storedQuestionSet ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(value => int.TryParse(value, out var questionId) ? questionId : 0)
+            .Where(questionId => questionId > 0)
             .ToHashSet();
 
         var selectedQuestions = quiz.Questions
@@ -155,9 +169,11 @@ public class QuizController : Controller
 
         if (selectedQuestions.Count == 0)
         {
-            TempData["Error"] = "Please answer the questions shown in the assessment.";
+            TempData["Error"] = "Your assessment session has expired. Please start the assessment again.";
             return RedirectToAction(nameof(Take), new { id = quiz.QuizId });
         }
+
+        HttpContext.Session.Remove(QuestionSetKey(studentId, quiz.QuizId));
 
         var score = 0;
 
@@ -215,7 +231,7 @@ public class QuizController : Controller
         {
             questions = questions
                 .OrderBy(_ => Random.Shared.Next())
-                .Take(Math.Min(5, quiz.Questions.Count));
+                .Take(Math.Min(QuestionsPerAttempt, quiz.Questions.Count));
         }
         else
         {
