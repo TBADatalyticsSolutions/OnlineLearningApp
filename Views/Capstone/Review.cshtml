@@ -1,0 +1,11 @@
+@model IEnumerable<OnlineLearningApp.Models.CapstoneSubmission>
+@{ ViewData["Title"] = "Capstone Reviews"; }
+<div class="container py-5">
+    <div class="eyebrow">Instructor workspace</div><h1 class="h2 fw-bold mb-4">Capstone submissions</h1>
+    <div class="row g-4">
+    @foreach (var item in Model)
+    {
+        <div class="col-lg-6"><div class="surface p-4 h-100"><div class="d-flex justify-content-between gap-3"><div><h2 class="h5 mb-1">@item.ProjectTitle</h2><div class="small text-muted-custom">@item.Student.FullName · @item.Course.CourseName</div></div><span class="badge rounded-pill text-bg-light">@item.Status</span></div><p class="small mt-3">@item.Summary</p><a href="@item.SubmissionUrl" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary mb-3">Open submission</a><form asp-action="Review" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.Id" /><select name="status" class="form-select form-select-sm mb-2"><option value="Approved">Approve</option><option value="NeedsRevision">Needs revision</option><option value="Rejected">Reject</option></select><textarea name="reviewerFeedback" class="form-control form-control-sm mb-2" rows="3" placeholder="Feedback for the learner"></textarea><button class="btn btn-primary btn-sm">Save review</button></form></div></div>
+    }
+    </div>
+</div>
