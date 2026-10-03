@@ -15,20 +15,17 @@ public sealed class CourseCompletionService : ICourseCompletionService
         if (course is null) throw new InvalidOperationException("Course was not found.");
         var enrollment = await _context.StudentCourses.FirstOrDefaultAsync(sc => sc.StudentId == studentId && sc.CourseId == courseId);
         if (enrollment is null) throw new InvalidOperationException("Student is not enrolled in this course.");
-
         var moduleIds = course.Modules.Select(m => m.ModuleId).ToList();
         var completedModules = await _context.StudentModuleProgress.Where(p => p.StudentId == studentId && p.CompletedAt != null && moduleIds.Contains(p.ModuleId)).Select(p => p.ModuleId).Distinct().CountAsync();
         var quizzes = course.Modules.SelectMany(m => m.Quizzes).ToList();
         var quizIds = quizzes.Select(q => q.QuizId).ToList();
         var passedQuizIds = await _context.QuizAttempts.Where(a => a.StudentId == studentId && a.Passed && quizIds.Contains(a.QuizId)).Select(a => a.QuizId).Distinct().ToListAsync();
-
         var modulesCompleted = moduleIds.Count == 0 || completedModules == moduleIds.Count;
         var quizzesCompleted = !course.RequireAllQuizzesPassed || quizzes.Count == 0 || passedQuizIds.Count == quizzes.Count;
         var paymentCompleted = !course.RequirePaymentForAssessment || await _context.Orders.AnyAsync(o => o.AccountId == studentId && o.PaymentStatus == PaymentStatus.Paid && o.OrderItems.Any(i => i.CourseId == courseId));
         var capstone = await _context.CapstoneSubmissions.FirstOrDefaultAsync(s => s.StudentId == studentId && s.CourseId == courseId);
         var capstoneCompleted = !course.RequireCapstone || capstone?.Status == CapstoneSubmissionStatus.Approved;
         var isCompleted = modulesCompleted && quizzesCompleted && paymentCompleted && capstoneCompleted;
-
         Certificate? certificate = null;
         if (isCompleted)
         {
@@ -41,7 +38,6 @@ public sealed class CourseCompletionService : ICourseCompletionService
             }
             await _context.SaveChangesAsync();
         }
-
-        return new CourseCompletionResult(isCompleted, modulesCompleted, quizzesCompleted, completedModules, moduleIds.Count, passedQuizIds.Count, quizzes.Count, certificate);
+        return new CourseCompletionResult(isCompleted, modulesCompleted, quizzesCompleted, paymentCompleted, capstoneCompleted, completedModules, moduleIds.Count, passedQuizIds.Count, quizzes.Count, certificate);
     }
 }
