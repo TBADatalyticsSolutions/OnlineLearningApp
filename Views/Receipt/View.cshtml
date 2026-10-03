@@ -2,14 +2,32 @@
 @model Order
 @{ ViewData["Title"] = "Payment Receipt"; }
 <div class="container py-5">
- <div class="card border-0 shadow-sm mx-auto" style="max-width:850px">
-  <div class="card-body p-5" id="receipt">
-   <div class="d-flex justify-content-between border-bottom pb-4 mb-4"><div><h2 class="fw-bold mb-1">TBA Online Learning</h2><div class="text-muted">Official Payment Receipt</div></div><div class="text-end"><strong>Receipt #@Model.Id</strong><br/>@Model.PaidAt?.ToLocalTime().ToString("dd MMM yyyy HH:mm")</div></div>
-   <p><strong>Learner:</strong> @Model.Email</p><p><strong>Payment reference:</strong> @Model.PaymentReference</p>
-   <table class="table"><thead><tr><th>Course</th><th class="text-end">Amount</th></tr></thead><tbody>@foreach (var item in Model.OrderItems){<tr><td>@item.Course?.CourseName</td><td class="text-end">₦@item.Price.ToString("N2")</td></tr>}</tbody><tfoot><tr class="fw-bold"><td>Total paid</td><td class="text-end">₦@Model.TotalAmount.ToString("N2")</td></tr></tfoot></table>
-   <div class="alert alert-success">Payment confirmed. Keep this receipt for your records.</div>
-  </div>
-  <div class="card-footer bg-white border-0 p-4"><button class="btn btn-dark" onclick="window.print()">Print / Save as PDF</button></div>
- </div>
+    <div class="card border-0 shadow-sm mx-auto" style="max-width:850px">
+        <div class="card-body p-5" id="receipt">
+            <div class="d-flex justify-content-between border-bottom pb-4 mb-4">
+                <div><h2 class="fw-bold mb-1">TBA Online Learning</h2><div class="text-muted">Official Payment Receipt</div></div>
+                <div class="text-end"><strong>Receipt #@Model.Id</strong><br />@Model.PaidAt?.ToLocalTime().ToString("dd MMM yyyy HH:mm")</div>
+            </div>
+            <p><strong>Learner:</strong> @Model.Email</p>
+            <p><strong>Payment reference:</strong> @Model.PaymentReference</p>
+            <table class="table">
+                <thead><tr><th>Course</th><th class="text-end">Amount</th></tr></thead>
+                <tbody>
+                @foreach (var item in Model.OrderItems)
+                {
+                    <tr><td>@item.Course?.CourseName</td><td class="text-end">₦@item.Price.ToString("N2")</td></tr>
+                }
+                </tbody>
+                <tfoot><tr class="fw-bold"><td>Total paid</td><td class="text-end">₦@Model.TotalAmount.ToString("N2")</td></tr></tfoot>
+            </table>
+            <div class="alert alert-success">Payment confirmed. Keep this receipt for your records.</div>
+        </div>
+        <div class="card-footer bg-white border-0 p-4"><button class="btn btn-dark" onclick="window.print()">Print / Save as PDF</button></div>
+    </div>
 </div>
-<style>@media print{.navbar,footer,.btn{display:none!important}.card{box-shadow:none!important;border:0!important}}</style>
+<style>
+@@media print {
+    .navbar, footer, .btn { display: none !important; }
+    .card { box-shadow: none !important; border: 0 !important; }
+}
+</style>
