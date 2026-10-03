@@ -10,6 +10,8 @@ namespace OnlineLearningApp.Controllers;
 public class QuizController : Controller
 {
     private const int QuestionsPerAttempt = 5;
+    private const string QuestionSetPrefix = "QuizQuestionSet:";
+    private const string StartTimePrefix = "QuizStartTime:";
     private readonly OnlineLearningAppDbContext _context;
 
     public QuizController(OnlineLearningAppDbContext context)
@@ -17,8 +19,11 @@ public class QuizController : Controller
         _context = context;
     }
 
-    private string QuestionSetKey(string studentId, int quizId)
-        => $"QuizQuestionSet:{studentId}:{quizId}";
+    private static string QuestionSetKey(string studentId, int quizId)
+        => $"{QuestionSetPrefix}{studentId}:{quizId}";
+
+    private static string StartTimeKey(string studentId, int quizId)
+        => $"{StartTimePrefix}{studentId}:{quizId}";
 
     [Authorize(Roles = UserRoles.Admin + "," + UserRoles.Instructor)]
     [HttpGet]
@@ -38,10 +43,7 @@ public class QuizController : Controller
     public async Task<IActionResult> History()
     {
         var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrWhiteSpace(studentId))
-        {
-            return Challenge();
-        }
+        if (string.IsNullOrWhiteSpace(studentId)) return Challenge();
 
         var attempts = await _context.QuizAttempts
             .AsNoTracking()
@@ -70,53 +72,37 @@ public class QuizController : Controller
     public async Task<IActionResult> Take(int id)
     {
         var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrWhiteSpace(studentId))
+        if (string.IsNullOrWhiteSpace(studentId)) return Challenge();
+
+        var quiz = await LoadQuizAsync(id);
+        if (quiz is null) return NotFound();
+
+        if (!await IsEnrolledAsync(studentId, quiz.Module.CourseId))
         {
-            return Challenge();
-        }
-
-        var quiz = await _context.Quizzes
-            .AsNoTracking()
-            .Include(q => q.Module)
-                .ThenInclude(m => m.Course)
-            .Include(q => q.Questions)
-                .ThenInclude(q => q.Options)
-            .FirstOrDefaultAsync(q => q.QuizId == id);
-
-        if (quiz is null)
-        {
-            return NotFound();
-        }
-
-        var enrolled = await _context.StudentCourses
-            .AnyAsync(sc => sc.StudentId == studentId && sc.CourseId == quiz.Module.CourseId);
-
-        if (!enrolled)
-        {
-            TempData["Error"] = "Please enroll in this course before taking its quizzes.";
+            TempData["Error"] = "Please enroll in this course before taking its assessments.";
             return RedirectToAction("Details", "Course", new { id = quiz.Module.CourseId });
         }
 
-        var latestAttempt = await _context.QuizAttempts
+        var previousAttempts = await _context.QuizAttempts
             .AsNoTracking()
-            .Where(a => a.StudentId == studentId && a.QuizId == id)
-            .OrderByDescending(a => a.AttemptedAt)
-            .FirstOrDefaultAsync();
+            .CountAsync(a => a.StudentId == studentId && a.QuizId == id);
 
-        var viewModel = BuildViewModel(quiz);
-        var questionSetKey = QuestionSetKey(studentId, id);
-        HttpContext.Session.SetString(
-            questionSetKey,
-            string.Join(",", viewModel.SelectedQuestionIds));
-
-        if (latestAttempt is not null)
+        if (quiz.AttemptLimit.HasValue && previousAttempts >= quiz.AttemptLimit.Value)
         {
-            viewModel.LastScore = latestAttempt.Score;
-            viewModel.LastTotalQuestions = latestAttempt.TotalQuestions;
-            viewModel.LastPercentage = latestAttempt.Percentage;
-            viewModel.AttemptedAt = latestAttempt.AttemptedAt;
+            TempData["Error"] = $"You have reached the {quiz.AttemptLimit.Value}-attempt limit for this assessment.";
+            return RedirectToAction("Learn", "Course", new { id = quiz.Module.CourseId });
         }
 
+        var viewModel = BuildViewModel(quiz);
+        HttpContext.Session.SetString(
+            QuestionSetKey(studentId, id),
+            string.Join(",", viewModel.SelectedQuestionIds));
+        HttpContext.Session.SetString(
+            StartTimeKey(studentId, id),
+            DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+
+        await PopulateLatestAttemptAsync(viewModel, studentId, id);
+        viewModel.AttemptNumber = previousAttempts + 1;
         return View(viewModel);
     }
 
@@ -126,75 +112,51 @@ public class QuizController : Controller
     public async Task<IActionResult> Submit(QuizAttemptViewModel model)
     {
         var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrWhiteSpace(studentId))
+        if (string.IsNullOrWhiteSpace(studentId)) return Challenge();
+
+        var quiz = await LoadQuizAsync(model.QuizId);
+        if (quiz is null) return NotFound();
+
+        if (!await IsEnrolledAsync(studentId, quiz.Module.CourseId))
         {
-            return Challenge();
-        }
-
-        var quiz = await _context.Quizzes
-            .AsNoTracking()
-            .Include(q => q.Module)
-                .ThenInclude(m => m.Course)
-            .Include(q => q.Questions)
-                .ThenInclude(q => q.Options)
-            .FirstOrDefaultAsync(q => q.QuizId == model.QuizId);
-
-        if (quiz is null)
-        {
-            return NotFound();
-        }
-
-        var enrolled = await _context.StudentCourses
-            .AnyAsync(sc => sc.StudentId == studentId && sc.CourseId == quiz.Module.CourseId);
-
-        if (!enrolled)
-        {
-            TempData["Error"] = "You must be enrolled in this course to submit the quiz.";
+            TempData["Error"] = "You must be enrolled in this course to submit the assessment.";
             return RedirectToAction("Details", "Course", new { id = quiz.Module.CourseId });
         }
 
-        var answers = model.Answers ?? new Dictionary<int, int>();
-        var storedQuestionSet = HttpContext.Session.GetString(
-            QuestionSetKey(studentId, quiz.QuizId));
+        var previousAttempts = await _context.QuizAttempts
+            .AsNoTracking()
+            .CountAsync(a => a.StudentId == studentId && a.QuizId == quiz.QuizId);
 
-        var selectedIds = (storedQuestionSet ?? string.Empty)
-            .Split(',', StringSplitOptions.RemoveEmptyEntries)
-            .Select(value => int.TryParse(value, out var questionId) ? questionId : 0)
-            .Where(questionId => questionId > 0)
-            .ToHashSet();
+        if (quiz.AttemptLimit.HasValue && previousAttempts >= quiz.AttemptLimit.Value)
+        {
+            TempData["Error"] = $"You have reached the {quiz.AttemptLimit.Value}-attempt limit for this assessment.";
+            return RedirectToAction("Learn", "Course", new { id = quiz.Module.CourseId });
+        }
 
+        // The server-side session is authoritative. Posted SelectedQuestionIds are never trusted for scoring.
+        var storedQuestionSet = HttpContext.Session.GetString(QuestionSetKey(studentId, quiz.QuizId));
+        var selectedIds = ParseIds(storedQuestionSet);
         var selectedQuestions = quiz.Questions
             .Where(q => selectedIds.Contains(q.QuestionId))
             .ToList();
 
         if (selectedQuestions.Count == 0)
         {
+            ClearAssessmentSession(studentId, quiz.QuizId);
             TempData["Error"] = "Your assessment session has expired. Please start the assessment again.";
             return RedirectToAction(nameof(Take), new { id = quiz.QuizId });
         }
 
-        HttpContext.Session.Remove(QuestionSetKey(studentId, quiz.QuizId));
-
-        var score = 0;
-
-        foreach (var question in selectedQuestions)
-        {
-            if (answers.TryGetValue(question.QuestionId, out var selectedOptionId))
-            {
-                var correctOption = question.Options.FirstOrDefault(o => o.IsCorrect);
-                if (correctOption?.OptionId == selectedOptionId)
-                {
-                    score++;
-                }
-            }
-        }
+        var answers = model.Answers ?? new Dictionary<int, int>();
+        var score = selectedQuestions.Count(question =>
+            answers.TryGetValue(question.QuestionId, out var selectedOptionId) &&
+            question.Options.Any(option => option.OptionId == selectedOptionId && option.IsCorrect));
 
         var totalQuestions = selectedQuestions.Count;
-        var percentage = totalQuestions == 0
-            ? 0m
-            : Math.Round(score * 100m / totalQuestions, 2);
+        var percentage = totalQuestions == 0 ? 0m : Math.Round(score * 100m / totalQuestions, 2);
         var passed = totalQuestions > 0 && percentage >= quiz.PassMark;
         var attemptedAt = DateTime.UtcNow;
+        var timeExpired = HasTimeExpired(studentId, quiz);
 
         _context.QuizAttempts.Add(new QuizAttempt
         {
@@ -208,37 +170,99 @@ public class QuizController : Controller
         });
 
         await _context.SaveChangesAsync();
+        ClearAssessmentSession(studentId, quiz.QuizId);
 
-        var result = BuildViewModel(quiz, selectedQuestions.Select(q => q.QuestionId));
+        var result = BuildViewModel(quiz, selectedQuestions.Select(q => q.QuestionId), revealAnswers: true);
         result.Answers = answers;
         result.SelectedQuestionIds = selectedQuestions.Select(q => q.QuestionId).ToList();
         result.Submitted = true;
         result.Score = score;
         result.TotalQuestions = totalQuestions;
+        result.AttemptNumber = previousAttempts + 1;
         result.LastScore = score;
         result.LastTotalQuestions = totalQuestions;
         result.LastPercentage = percentage;
         result.AttemptedAt = attemptedAt;
+        result.TimeExpired = timeExpired;
 
         return View("Take", result);
     }
 
-    private static QuizAttemptViewModel BuildViewModel(Quiz quiz, IEnumerable<int>? selectedQuestionIds = null)
+    private async Task<Quiz?> LoadQuizAsync(int quizId)
     {
-        var questions = quiz.Questions.AsEnumerable();
+        return await _context.Quizzes
+            .AsNoTracking()
+            .Include(q => q.Module)
+                .ThenInclude(m => m.Course)
+            .Include(q => q.Questions)
+                .ThenInclude(q => q.Options)
+            .FirstOrDefaultAsync(q => q.QuizId == quizId);
+    }
+
+    private Task<bool> IsEnrolledAsync(string studentId, int courseId)
+        => _context.StudentCourses.AnyAsync(sc =>
+            sc.StudentId == studentId && sc.CourseId == courseId);
+
+    private async Task PopulateLatestAttemptAsync(QuizAttemptViewModel model, string studentId, int quizId)
+    {
+        var latestAttempt = await _context.QuizAttempts
+            .AsNoTracking()
+            .Where(a => a.StudentId == studentId && a.QuizId == quizId)
+            .OrderByDescending(a => a.AttemptedAt)
+            .FirstOrDefaultAsync();
+
+        if (latestAttempt is null) return;
+
+        model.LastScore = latestAttempt.Score;
+        model.LastTotalQuestions = latestAttempt.TotalQuestions;
+        model.LastPercentage = latestAttempt.Percentage;
+        model.AttemptedAt = latestAttempt.AttemptedAt;
+    }
+
+    private bool HasTimeExpired(string studentId, Quiz quiz)
+    {
+        if (!quiz.TimeLimitMinutes.HasValue) return false;
+
+        var rawStart = HttpContext.Session.GetString(StartTimeKey(studentId, quiz.QuizId));
+        if (!long.TryParse(rawStart, out var startSeconds)) return true;
+
+        var elapsed = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - startSeconds;
+        return elapsed > TimeSpan.FromMinutes(quiz.TimeLimitMinutes.Value).TotalSeconds;
+    }
+
+    private void ClearAssessmentSession(string studentId, int quizId)
+    {
+        HttpContext.Session.Remove(QuestionSetKey(studentId, quizId));
+        HttpContext.Session.Remove(StartTimeKey(studentId, quizId));
+    }
+
+    private static HashSet<int> ParseIds(string? value)
+        => (value ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(id => int.TryParse(id, out var parsed) ? parsed : 0)
+            .Where(id => id > 0)
+            .ToHashSet();
+
+    private static QuizAttemptViewModel BuildViewModel(
+        Quiz quiz,
+        IEnumerable<int>? selectedQuestionIds = null,
+        bool revealAnswers = false)
+    {
+        IEnumerable<Question> questions = quiz.Questions;
 
         if (selectedQuestionIds is null)
         {
-            questions = questions
-                .OrderBy(_ => Random.Shared.Next())
-                .Take(Math.Min(QuestionsPerAttempt, quiz.Questions.Count));
+            questions = quiz.ShuffleQuestions
+                ? questions.OrderBy(_ => Random.Shared.Next())
+                : questions.OrderBy(q => q.QuestionId);
+            questions = questions.Take(Math.Min(QuestionsPerAttempt, quiz.Questions.Count));
         }
         else
         {
             var ids = selectedQuestionIds.ToHashSet();
             questions = questions
                 .Where(q => ids.Contains(q.QuestionId))
-                .OrderBy(_ => Random.Shared.Next());
+                .OrderBy(q => quiz.ShuffleQuestions ? Random.Shared.Next() : q.QuestionId);
         }
 
         var selectedQuestions = questions.ToList();
@@ -251,25 +275,29 @@ public class QuizController : Controller
             CourseId = quiz.Module.CourseId,
             CourseName = quiz.Module.Course.CourseName,
             PassMark = quiz.PassMark,
+            TimeLimitMinutes = quiz.TimeLimitMinutes,
+            AttemptLimit = quiz.AttemptLimit,
+            IsPractice = quiz.IsPractice,
             TotalQuestions = selectedQuestions.Count,
             SelectedQuestionIds = selectedQuestions.Select(q => q.QuestionId).ToList(),
-            Questions = selectedQuestions
-                .Select(q => new QuizQuestionViewModel
-                {
-                    QuestionId = q.QuestionId,
-                    QuestionText = q.QuestionText,
-                    CorrectOptionId = q.Options.FirstOrDefault(o => o.IsCorrect)?.OptionId,
-                    Options = q.Options
-                        .OrderBy(o => Random.Shared.Next())
-                        .Select(o => new QuizOptionViewModel
-                        {
-                            OptionId = o.OptionId,
-                            OptionText = o.OptionText,
-                            IsCorrect = o.IsCorrect
-                        })
-                        .ToList()
-                })
-                .ToList()
+            Questions = selectedQuestions.Select(q => new QuizQuestionViewModel
+            {
+                QuestionId = q.QuestionId,
+                QuestionText = q.QuestionText,
+                Difficulty = q.Difficulty,
+                Explanation = revealAnswers ? q.Explanation : string.Empty,
+                CorrectOptionId = revealAnswers ? q.Options.FirstOrDefault(o => o.IsCorrect)?.OptionId : null,
+                Options = (quiz.ShuffleOptions
+                        ? q.Options.OrderBy(_ => Random.Shared.Next())
+                        : q.Options.OrderBy(o => o.OptionId))
+                    .Select(o => new QuizOptionViewModel
+                    {
+                        OptionId = o.OptionId,
+                        OptionText = o.OptionText,
+                        IsCorrect = revealAnswers && o.IsCorrect
+                    })
+                    .ToList()
+            }).ToList()
         };
     }
 }
