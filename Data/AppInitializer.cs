@@ -301,8 +301,50 @@ public class AppInitializer
                 await context.SaveChangesAsync();
             }
 
+            await EnsureCourseLearningPolicyAsync(context, course);
             await SeedModulesAndQuizAsync(context, course, item.Modules);
         }
+    }
+
+    private static async Task EnsureCourseLearningPolicyAsync(OnlineLearningAppDbContext context, Course course)
+    {
+        // The first course is the flagship professional GenAI pathway. Keep its learner journey explicit:
+        // enrol -> study -> pay -> pass checkpoints -> submit/defend capstone -> earn certificate.
+        if (!string.Equals(course.CourseName, "Generative AI & AI Agents with Python", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        course.RequirePaymentForAssessment = true;
+        course.RequireAllQuizzesPassed = true;
+        course.RequireCapstone = true;
+        course.CapstoneTitle = "Build, Evaluate & Deploy a Production-Ready AI Agent";
+        course.CapstoneDescription = "Design and implement a practical AI agent in Python that solves a clearly defined user or business problem. The project must demonstrate prompt design, structured outputs, tool use, retrieval or memory where appropriate, safety controls, evaluation, and a usable interface or API.";
+        course.CapstoneRequirements = "Submit: 1) problem statement and target users, 2) architecture diagram, 3) working Python implementation or repository, 4) prompt and tool design, 5) evaluation plan with representative test cases, 6) safety/guardrail considerations, 7) results and limitations, 8) setup and usage instructions, and 9) a short reflection on what you would improve for production.";
+        await context.SaveChangesAsync();
+
+        var modules = await context.Modules
+            .Where(m => m.CourseId == course.Id)
+            .OrderBy(m => m.ModuleId)
+            .ToListAsync();
+
+        var enhancedContent = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Python Foundations for GenAI"] = "Module objective: establish the Python foundation needed to build reliable AI applications. Topics include project environments and dependency management, functions and classes, typing and validation, configuration and secrets, API clients, JSON and structured data, exception handling, logging, reusable service functions, and basic testing. Learning activities: build a small Python client that reads configuration safely, calls a mock or real API, validates a structured response, handles failures, and records useful logs. Deliverable: a clean repository with a reproducible environment and a small command-line AI utility.",
+            ["LLMs, Tools & AI Agents"] = "Module objective: understand how modern LLM applications move from a simple prompt to a controlled multi-step workflow. Topics include prompt design, system and user instructions, few-shot examples, structured outputs, tool/function calling, agent state, short-term memory, retrieval, grounding, context management, retries, observability, and human approval for risky actions. Learning activities: design a structured-output prompt, connect at least one tool, create an agent loop with explicit stopping conditions, and evaluate failure cases. Deliverable: a small tool-using agent with documented inputs, outputs, constraints, and test cases.",
+            ["Build & Evaluate an AI Agent"] = "Module objective: turn the previous concepts into a practical, evaluation-driven AI system. Topics include agent architecture, guardrails, prompt-injection awareness, data privacy, tool authorization, evaluation datasets, qualitative and quantitative checks, latency/cost considerations, error handling, monitoring, deployment configuration, and responsible AI. Learning activities: define success criteria, build an evaluation set, test normal and adversarial cases, measure failures, improve the agent, and document deployment requirements. Deliverable: a production-minded agent prototype that can be presented as the course capstone foundation."
+        };
+
+        foreach (var module in modules)
+        {
+            if (enhancedContent.TryGetValue(module.ModuleName, out var content) &&
+                (string.IsNullOrWhiteSpace(module.Content) || module.Content.Length < 400))
+            {
+                module.Content = content;
+            }
+        }
+
+        await context.SaveChangesAsync();
     }
 
     private static async Task SeedModulesAndQuizAsync(
