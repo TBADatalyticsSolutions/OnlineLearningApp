@@ -8,12 +8,49 @@ A production-oriented online learning management system built with ASP.NET Core 
 - Instructor dashboard and role-based content management
 - Administrator course, user, order, module, quiz, question, and option management
 - Course/module completion tracking
-- Quiz scoring with configurable pass marks
+- Paid-course entitlement enforcement before graded assessments
+- Paystack checkout initialization and server-side payment verification
+- Configurable assessment pass marks, attempts, timing, question selection, and feedback
+- Applied capstone project submission and instructor/admin review
 - Completion certificates and public certificate verification
 - Learning resource library linking to authoritative external documentation
-- Shopping cart and order recording
+- Shopping cart and payment/order history
+- Custom Terms & Conditions, Privacy Policy, and Payment & Refund Policy
 - CSRF protection, password policy, account lockout, role-based authorization, and secure cookies
 - Idempotent course/module/quiz seed data
+
+## Course completion policy
+For courses configured with the default professional completion policy, a learner must:
+1. Be enrolled in the course.
+2. Complete the required modules.
+3. Pass required checkpoint assessments.
+4. Have a confirmed paid entitlement for the course.
+5. Submit the required capstone project.
+6. Receive capstone approval from an authorised reviewer.
+
+Only after these requirements are satisfied may the platform issue a certificate. Direct certificate access also re-evaluates the completion rules.
+
+## Payments
+The application uses a payment-gateway abstraction with a Paystack implementation for NGN checkout. The secret key is read from configuration and must never be committed to source control. The server initializes transactions and verifies the transaction reference and amount before marking an order as paid. Paystack's documentation recommends server-side initialization and verification before delivering digital value.
+
+Required production configuration:
+
+    Paystack:SecretKey=<secret>
+
+For Render or another deployment platform, configure this as a secret environment variable rather than committing it to a configuration file.
+
+A manual admin `MarkPaid` action remains available for controlled reconciliation of offline/manual payments. It should be restricted to trusted finance/admin workflows in production.
+
+## Capstone projects
+Every course defaults to an applied capstone requirement. Course fields define the capstone title, description, and deliverables. Learners submit a project URL/repository and executive summary. Instructors/admins review submissions and can approve, reject, or request revisions. Approval is required before certification when `RequireCapstone` is enabled.
+
+## Legal pages
+The platform provides editable Razor pages for:
+- `/Legal/Terms`
+- `/Legal/Privacy`
+- `/Legal/Refunds`
+
+These are platform-specific starter policies and should be reviewed by the organisation's legal/privacy adviser before production use.
 
 ## Technology stack
 - .NET 8 / ASP.NET Core MVC
@@ -28,20 +65,21 @@ A production-oriented online learning management system built with ASP.NET Core 
 ## Local setup
 1. Clone the repository and open the project directory.
 2. Provide a local DefaultConnection through appsettings.json, environment variables, or user secrets. Do not commit local or production secrets.
-3. Restore and build:
+3. Provide `Paystack:SecretKey` if testing real checkout.
+4. Restore and build:
 
     dotnet restore
     dotnet build
 
-4. Create a migration whenever the EF model changes:
+5. Create a migration whenever the EF model changes:
 
     dotnet ef migrations add <DescriptiveMigrationName>
 
-5. Apply migrations locally:
+6. Apply migrations locally:
 
     dotnet ef database update
 
-6. Run:
+7. Run:
 
     dotnet run
 
@@ -68,19 +106,12 @@ Keep feature and hardening work on a dedicated branch, validate with:
 Then open a pull request into main after local validation and database migration review.
 
 ## Current schema note
-The learning-progress and assessment features introduce additional tables/columns including:
-- StudentCourses.CompletedAt
-- StudentModuleProgress
-- QuizAttempt
-- Quiz.PassMark
-- Certificate
-
-If a local database reports an error such as Unknown column 'q.PassMark', the application code is ahead of the database schema. Generate/apply the pending EF migration before starting the application.
+The current implementation adds payment and capstone fields/tables in addition to the learning-progress and assessment schema. If the local database reports an unknown-column/table error after pulling main, generate and apply the pending EF migration before starting the application.
 
 ## Project structure
 - Controllers/ — MVC request handling and authorization boundaries
 - Models/ — domain entities and view models
-- Data/ — EF Core context, migrations, repositories, services, seed logic, and cart
+- Data/ — EF Core context, migrations, payment services, seed logic, and cart
 - Views/ — MVC Razor views
 - wwwroot/ — CSS, JavaScript, Bootstrap assets, and learning resources
 - .github/workflows/ — CI automation
@@ -88,6 +119,6 @@ If a local database reports an error such as Unknown column 'q.PassMark', the ap
 ## Security principles
 - Never commit appsettings.json containing credentials.
 - Rotate any credential that has previously appeared in public repository history.
-- Keep production database credentials in the deployment platform's secret store.
+- Keep production database and payment credentials in the deployment platform's secret store.
 - Use HTTPS in deployed environments.
 - Use Identity roles for authorization; the legacy Account.Role field is retained only for schema compatibility.
