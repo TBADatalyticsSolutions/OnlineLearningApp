@@ -21,11 +21,23 @@ public class CapstoneSubmission
     public Course Course { get; set; } = default!;
     [Required, MaxLength(200)]
     public string ProjectTitle { get; set; } = default!;
-    [Required]
+    [Required, Url]
     public string SubmissionUrl { get; set; } = default!;
     public string? Summary { get; set; }
     public CapstoneSubmissionStatus Status { get; set; } = CapstoneSubmissionStatus.Submitted;
     public string? ReviewerFeedback { get; set; }
+    public string? ReviewerId { get; set; }
+    public Account? Reviewer { get; set; }
+    [Range(0, 100)] public decimal TechnicalScore { get; set; }
+    [Range(0, 100)] public decimal ProblemSolvingScore { get; set; }
+    [Range(0, 100)] public decimal CommunicationScore { get; set; }
+    [Range(0, 100)] public decimal ProfessionalismScore { get; set; }
+    [Range(0, 100)] public decimal OverallScore { get; set; }
     public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
     public DateTime? ReviewedAt { get; set; }
+
+    public void CalculateOverallScore()
+    {
+        OverallScore = Math.Round((TechnicalScore + ProblemSolvingScore + CommunicationScore + ProfessionalismScore) / 4m, 2);
+    }
 }
