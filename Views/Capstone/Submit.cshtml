@@ -1,0 +1,19 @@
+@model OnlineLearningApp.Models.CapstoneSubmission
+@{ var course = (OnlineLearningApp.Models.Course)ViewBag.Course; ViewData["Title"] = "Capstone Project"; }
+<div class="container py-5">
+    <div class="surface p-4 p-lg-5">
+        <div class="eyebrow">Final applied project</div>
+        <h1 class="h2 fw-bold">@course.CapstoneTitle</h1>
+        <p class="text-muted-custom">@course.CapstoneDescription</p>
+        <div class="alert alert-light border mt-4"><strong>Deliverables</strong><br/>@course.CapstoneRequirements</div>
+        <form asp-action="Submit" method="post" class="mt-4">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="CourseId" />
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <div class="mb-3"><label asp-for="ProjectTitle" class="form-label">Project title</label><input asp-for="ProjectTitle" class="form-control" /></div>
+            <div class="mb-3"><label asp-for="SubmissionUrl" class="form-label">Project / repository / portfolio URL</label><input asp-for="SubmissionUrl" type="url" class="form-control" placeholder="https://..." /></div>
+            <div class="mb-4"><label asp-for="Summary" class="form-label">Executive summary</label><textarea asp-for="Summary" class="form-control" rows="6" placeholder="Describe the problem, approach, tools, results and key learning outcomes."></textarea></div>
+            <button class="btn btn-primary"><i class="bi bi-send me-2"></i>Submit capstone for review</button>
+        </form>
+    </div>
+</div>
