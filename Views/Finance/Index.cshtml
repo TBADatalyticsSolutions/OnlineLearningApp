@@ -1,0 +1,19 @@
+@using OnlineLearningApp.Models
+@model IEnumerable<Order>
+@{
+    ViewData["Title"] = "Finance & Payments";
+}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div><h1 class="fw-bold mb-1">Finance & Payments</h1><p class="text-muted mb-0">Monitor orders, confirmed revenue and payment activity.</p></div>
+    </div>
+    <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="card shadow-sm border-0"><div class="card-body"><small class="text-muted">Gross revenue</small><h3 class="fw-bold">₦@ViewBag.GrossRevenue.ToString("N2")</h3></div></div></div>
+        <div class="col-md-3"><div class="card shadow-sm border-0"><div class="card-body"><small class="text-muted">Paid orders</small><h3 class="fw-bold">@ViewBag.PaidOrders</h3></div></div></div>
+        <div class="col-md-3"><div class="card shadow-sm border-0"><div class="card-body"><small class="text-muted">Pending</small><h3 class="fw-bold">@ViewBag.PendingOrders</h3></div></div></div>
+        <div class="col-md-3"><div class="card shadow-sm border-0"><div class="card-body"><small class="text-muted">Failed</small><h3 class="fw-bold">@ViewBag.FailedOrders</h3></div></div></div>
+    </div>
+    <div class="card border-0 shadow-sm"><div class="card-body p-0"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Order</th><th>Learner</th><th>Course</th><th>Amount</th><th>Status</th><th>Paid</th><th>Reference</th></tr></thead><tbody>
+    @foreach (var order in Model) { <tr><td>#@order.Id</td><td>@order.Email</td><td>@string.Join(", ", order.OrderItems.Select(i => i.Course?.CourseName ?? "Course"))</td><td>₦@order.TotalAmount.ToString("N2")</td><td><span class="badge @(order.PaymentStatus.ToString() == "Paid" ? "bg-success" : "bg-secondary")">@order.PaymentStatus</span></td><td>@order.PaidAt?.ToLocalTime().ToString("dd MMM yyyy HH:mm")</td><td>@order.PaymentReference</td></tr> }
+    </tbody></table></div></div></div>
+</div>
