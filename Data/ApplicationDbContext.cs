@@ -23,129 +23,47 @@ public class OnlineLearningAppDbContext : IdentityDbContext<Account>
     public DbSet<QuizAttempt> QuizAttempts { get; set; }
     public DbSet<Certificate> Certificates { get; set; }
     public DbSet<CourseMaterial> CourseMaterials { get; set; }
+    public DbSet<CapstoneSubmission> CapstoneSubmissions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<Account>()
-            .HasMany(a => a.Courses)
-            .WithOne(c => c.Instructor)
-            .HasForeignKey(c => c.InstructorId);
-
-        modelBuilder.Entity<Account>()
-            .HasMany(a => a.Orders)
-            .WithOne(o => o.Account)
-            .HasForeignKey(o => o.AccountId);
-
-        modelBuilder.Entity<Course>()
-            .Property(c => c.RequireAllQuizzesPassed)
-            .HasDefaultValue(true);
-
-        modelBuilder.Entity<Course>()
-            .HasOne(c => c.Instructor)
-            .WithMany(a => a.Courses)
-            .HasForeignKey(c => c.InstructorId)
-            .OnDelete(DeleteBehavior.Cascade);
-
+        modelBuilder.Entity<Account>().HasMany(a => a.Courses).WithOne(c => c.Instructor).HasForeignKey(c => c.InstructorId);
+        modelBuilder.Entity<Account>().HasMany(a => a.Orders).WithOne(o => o.Account).HasForeignKey(o => o.AccountId);
+        modelBuilder.Entity<Course>().Property(c => c.RequireAllQuizzesPassed).HasDefaultValue(true);
+        modelBuilder.Entity<Course>().Property(c => c.RequirePaymentForAssessment).HasDefaultValue(true);
+        modelBuilder.Entity<Course>().Property(c => c.RequireCapstone).HasDefaultValue(true);
+        modelBuilder.Entity<Course>().HasOne(c => c.Instructor).WithMany(a => a.Courses).HasForeignKey(c => c.InstructorId).OnDelete(DeleteBehavior.Cascade);
         modelBuilder.Entity<Course_Module>().HasKey(cm => new { cm.CourseId, cm.ModuleId });
-
-        modelBuilder.Entity<Course_Module>()
-            .HasOne(cm => cm.Course).WithMany(c => c.Courses_Modules)
-            .HasForeignKey(cm => cm.CourseId);
-
-        modelBuilder.Entity<Course_Module>()
-            .HasOne(cm => cm.Module).WithMany(m => m.Courses_Modules)
-            .HasForeignKey(cm => cm.ModuleId);
-
-        modelBuilder.Entity<OrderItem>()
-            .HasOne(oi => oi.Order).WithMany(o => o.OrderItems)
-            .HasForeignKey(oi => oi.OrderId);
-
-        modelBuilder.Entity<CourseMaterial>()
-            .HasOne(m => m.Module)
-            .WithMany(module => module.Materials)
-            .HasForeignKey(m => m.ModuleId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<CourseMaterial>()
-            .HasOne(m => m.UploadedBy)
-            .WithMany()
-            .HasForeignKey(m => m.UploadedById)
-            .IsRequired(false)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        modelBuilder.Entity<Quiz>()
-            .HasOne(q => q.Module).WithMany(m => m.Quizzes)
-            .HasForeignKey(q => q.ModuleId);
-
-        modelBuilder.Entity<Question>()
-            .HasOne(q => q.Quiz).WithMany(quiz => quiz.Questions)
-            .HasForeignKey(q => q.QuizId);
-
-        modelBuilder.Entity<Option>()
-            .HasOne(o => o.Question).WithMany(q => q.Options)
-            .HasForeignKey(o => o.QuestionId);
-
+        modelBuilder.Entity<Course_Module>().HasOne(cm => cm.Course).WithMany(c => c.Courses_Modules).HasForeignKey(cm => cm.CourseId);
+        modelBuilder.Entity<Course_Module>().HasOne(cm => cm.Module).WithMany(m => m.Courses_Modules).HasForeignKey(cm => cm.ModuleId);
+        modelBuilder.Entity<OrderItem>().HasOne(oi => oi.Order).WithMany(o => o.OrderItems).HasForeignKey(oi => oi.OrderId);
+        modelBuilder.Entity<CourseMaterial>().HasOne(m => m.Module).WithMany(module => module.Materials).HasForeignKey(m => m.ModuleId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<CourseMaterial>().HasOne(m => m.UploadedBy).WithMany().HasForeignKey(m => m.UploadedById).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
+        modelBuilder.Entity<Quiz>().HasOne(q => q.Module).WithMany(m => m.Quizzes).HasForeignKey(q => q.ModuleId);
+        modelBuilder.Entity<Question>().HasOne(q => q.Quiz).WithMany(quiz => quiz.Questions).HasForeignKey(q => q.QuizId);
+        modelBuilder.Entity<Option>().HasOne(o => o.Question).WithMany(q => q.Options).HasForeignKey(o => o.QuestionId);
         modelBuilder.Entity<StudentCourse>().HasKey(sc => new { sc.StudentId, sc.CourseId });
-
-        modelBuilder.Entity<StudentCourse>()
-            .HasOne(sc => sc.Student).WithMany(a => a.StudentCourses)
-            .HasForeignKey(sc => sc.StudentId).OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<StudentCourse>()
-            .HasOne(sc => sc.Course).WithMany(c => c.StudentCourses)
-            .HasForeignKey(sc => sc.CourseId).OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<StudentCourse>()
-            .HasIndex(sc => sc.StudentId);
-
-        modelBuilder.Entity<StudentModuleProgress>()
-            .HasIndex(p => new { p.StudentId, p.ModuleId }).IsUnique();
-
-        modelBuilder.Entity<StudentModuleProgress>()
-            .HasOne(p => p.Student).WithMany(a => a.ModuleProgress)
-            .HasForeignKey(p => p.StudentId).OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<StudentModuleProgress>()
-            .HasOne(p => p.Module).WithMany()
-            .HasForeignKey(p => p.ModuleId).OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<QuizAttempt>()
-            .HasOne(a => a.Student).WithMany(s => s.QuizAttempts)
-            .HasForeignKey(a => a.StudentId).OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<QuizAttempt>()
-            .HasOne(a => a.Quiz).WithMany()
-            .HasForeignKey(a => a.QuizId).OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<Course>()
-            .Property(c => c.Price).HasPrecision(18, 2);
-
-        modelBuilder.Entity<Order>()
-            .Property(o => o.TotalAmount).HasPrecision(18, 2);
-
-        modelBuilder.Entity<OrderItem>()
-            .Property(oi => oi.Price).HasPrecision(18, 2);
-
-        modelBuilder.Entity<Quiz>()
-            .Property(q => q.PassMark).HasPrecision(5, 2);
-
-        modelBuilder.Entity<QuizAttempt>()
-            .Property(a => a.Percentage).HasPrecision(5, 2);
-
-        modelBuilder.Entity<Certificate>()
-            .HasIndex(c => c.CertificateNumber).IsUnique();
-
-        modelBuilder.Entity<Certificate>()
-            .HasIndex(c => new { c.StudentId, c.CourseId }).IsUnique();
-
-        modelBuilder.Entity<Certificate>()
-            .HasOne(c => c.Student).WithMany()
-            .HasForeignKey(c => c.StudentId).OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<Certificate>()
-            .HasOne(c => c.Course).WithMany()
-            .HasForeignKey(c => c.CourseId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<StudentCourse>().HasOne(sc => sc.Student).WithMany(a => a.StudentCourses).HasForeignKey(sc => sc.StudentId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<StudentCourse>().HasOne(sc => sc.Course).WithMany(c => c.StudentCourses).HasForeignKey(sc => sc.CourseId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<StudentCourse>().HasIndex(sc => sc.StudentId);
+        modelBuilder.Entity<StudentModuleProgress>().HasIndex(p => new { p.StudentId, p.ModuleId }).IsUnique();
+        modelBuilder.Entity<StudentModuleProgress>().HasOne(p => p.Student).WithMany(a => a.ModuleProgress).HasForeignKey(p => p.StudentId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<StudentModuleProgress>().HasOne(p => p.Module).WithMany().HasForeignKey(p => p.ModuleId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<QuizAttempt>().HasOne(a => a.Student).WithMany(s => s.QuizAttempts).HasForeignKey(a => a.StudentId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<QuizAttempt>().HasOne(a => a.Quiz).WithMany().HasForeignKey(a => a.QuizId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<Course>().Property(c => c.Price).HasPrecision(18, 2);
+        modelBuilder.Entity<Order>().Property(o => o.TotalAmount).HasPrecision(18, 2);
+        modelBuilder.Entity<OrderItem>().Property(oi => oi.Price).HasPrecision(18, 2);
+        modelBuilder.Entity<Quiz>().Property(q => q.PassMark).HasPrecision(5, 2);
+        modelBuilder.Entity<QuizAttempt>().Property(a => a.Percentage).HasPrecision(5, 2);
+        modelBuilder.Entity<Certificate>().HasIndex(c => c.CertificateNumber).IsUnique();
+        modelBuilder.Entity<Certificate>().HasIndex(c => new { c.StudentId, c.CourseId }).IsUnique();
+        modelBuilder.Entity<Certificate>().HasOne(c => c.Student).WithMany().HasForeignKey(c => c.StudentId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<Certificate>().HasOne(c => c.Course).WithMany().HasForeignKey(c => c.CourseId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<CapstoneSubmission>().HasIndex(s => new { s.StudentId, s.CourseId }).IsUnique();
+        modelBuilder.Entity<CapstoneSubmission>().HasOne(s => s.Student).WithMany().HasForeignKey(s => s.StudentId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<CapstoneSubmission>().HasOne(s => s.Course).WithMany().HasForeignKey(s => s.CourseId).OnDelete(DeleteBehavior.Cascade);
     }
 }
