@@ -8,8 +8,10 @@ using OnlineLearningApp.Data.Cart;
 using OnlineLearningApp.Data.Services;
 using OnlineLearningApp.Data.Services.Implementation;
 using OnlineLearningApp.Models;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+QuestPDF.Settings.License = LicenseType.Community;
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' was not found.");
 builder.Services.AddControllersWithViews(options => options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()));
 builder.Services.AddDbContext<OnlineLearningAppDbContext>(options => options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 23)), o => o.EnableRetryOnFailure()));
