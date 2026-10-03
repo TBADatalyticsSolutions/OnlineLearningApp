@@ -1,11 +1,23 @@
 @model IEnumerable<OnlineLearningApp.Models.CapstoneSubmission>
 @{ ViewData["Title"] = "Capstone Reviews"; }
 <div class="container py-5">
-    <div class="eyebrow">Instructor workspace</div><h1 class="h2 fw-bold mb-4">Capstone submissions</h1>
+    <div class="eyebrow">Instructor workspace</div><h1 class="h2 fw-bold mb-2">Capstone submissions</h1><p class="text-muted">Grade each project using the four-part rubric. The overall score is calculated automatically.</p>
     <div class="row g-4">
     @foreach (var item in Model)
     {
-        <div class="col-lg-6"><div class="surface p-4 h-100"><div class="d-flex justify-content-between gap-3"><div><h2 class="h5 mb-1">@item.ProjectTitle</h2><div class="small text-muted-custom">@item.Student.FullName · @item.Course.CourseName</div></div><span class="badge rounded-pill text-bg-light">@item.Status</span></div><p class="small mt-3">@item.Summary</p><a href="@item.SubmissionUrl" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary mb-3">Open submission</a><form asp-action="Review" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.Id" /><select name="status" class="form-select form-select-sm mb-2"><option value="Approved">Approve</option><option value="NeedsRevision">Needs revision</option><option value="Rejected">Reject</option></select><textarea name="reviewerFeedback" class="form-control form-control-sm mb-2" rows="3" placeholder="Feedback for the learner"></textarea><button class="btn btn-primary btn-sm">Save review</button></form></div></div>
+        <div class="col-xl-6"><div class="surface p-4 h-100"><div class="d-flex justify-content-between gap-3"><div><h2 class="h5 mb-1">@item.ProjectTitle</h2><div class="small text-muted-custom">@item.Student.FullName · @item.Course.CourseName</div></div><span class="badge rounded-pill text-bg-light">@item.Status</span></div><p class="small mt-3">@item.Summary</p><a href="@item.SubmissionUrl" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary mb-3">Open submission</a>
+        <form asp-action="Review" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.Id" />
+          <div class="row g-2">
+            <div class="col-6"><label class="form-label small">Technical quality (25%)</label><input name="TechnicalScore" type="number" min="0" max="100" step="0.01" value="@item.TechnicalScore" class="form-control" /></div>
+            <div class="col-6"><label class="form-label small">Problem solving (25%)</label><input name="ProblemSolvingScore" type="number" min="0" max="100" step="0.01" value="@item.ProblemSolvingScore" class="form-control" /></div>
+            <div class="col-6"><label class="form-label small">Communication (25%)</label><input name="CommunicationScore" type="number" min="0" max="100" step="0.01" value="@item.CommunicationScore" class="form-control" /></div>
+            <div class="col-6"><label class="form-label small">Professionalism (25%)</label><input name="ProfessionalismScore" type="number" min="0" max="100" step="0.01" value="@item.ProfessionalismScore" class="form-control" /></div>
+          </div>
+          <div class="mt-3 p-3 rounded bg-light"><strong>Current overall score:</strong> @item.OverallScore.ToString("N2")%</div>
+          <select name="Status" class="form-select mt-3"><option value="Approved">Approve</option><option value="NeedsRevision">Needs revision</option><option value="Rejected">Reject</option></select>
+          <textarea name="ReviewerFeedback" class="form-control mt-2" rows="3" placeholder="Specific, actionable feedback">@item.ReviewerFeedback</textarea>
+          <button class="btn btn-primary mt-2">Save rubric & review</button>
+        </form></div></div>
     }
     </div>
 </div>
