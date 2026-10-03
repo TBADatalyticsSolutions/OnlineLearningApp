@@ -7,11 +7,20 @@
                 <a asp-controller="Course" asp-action="Learn" asp-route-id="@Model.CourseId" class="small text-decoration-none"><i class="bi bi-arrow-left me-1"></i> Back to learning</a>
                 <a asp-action="History" class="small text-decoration-none">Assessment history <i class="bi bi-arrow-right ms-1"></i></a>
             </div>
+
             <div class="quiz-header mt-3 mb-4">
-                <span class="badge bg-white text-primary mb-3">Checkpoint assessment</span>
-                <h1 class="h2 fw-bold">@Model.QuizName</h1>
-                <p class="mb-0" style="color:#d5e5f7;">@Model.Description</p>
-                <div class="small mt-3" style="color:#c4d7ee;"><i class="bi bi-list-check me-1"></i> @Model.TotalQuestions questions · Pass mark: @Model.PassMark.ToString("0.##")%</div>
+                <div class="d-flex flex-wrap justify-content-between gap-3 align-items-start">
+                    <div>
+                        <span class="badge bg-white text-primary mb-3">@(Model.IsPractice ? "Practice assessment" : "Checkpoint assessment")</span>
+                        <h1 class="h2 fw-bold">@Model.QuizName</h1>
+                        <p class="mb-0" style="color:#d5e5f7;">@Model.Description</p>
+                    </div>
+                    <div class="text-end small" style="color:#c4d7ee;">
+                        <div><i class="bi bi-list-check me-1"></i>@Model.TotalQuestions questions</div>
+                        <div class="mt-1">Pass mark: @Model.PassMark.ToString("0.##")%</div>
+                        @if (Model.TimeLimitMinutes.HasValue && !Model.Submitted) { <div class="mt-1"><i class="bi bi-clock me-1"></i>@Model.TimeLimitMinutes minutes</div> }
+                    </div>
+                </div>
             </div>
 
             @if (Model.Submitted) {
@@ -21,16 +30,19 @@
                     <i class="bi @(passed ? "bi-check-circle-fill" : "bi-exclamation-circle-fill") me-2"></i>
                     <strong>Assessment submitted.</strong> You scored @Model.Score / @Model.TotalQuestions (@percentage%).
                     <span class="ms-2">@(passed ? "Passed" : "Not passed yet")</span>
-                    <div class="mt-2 small">@(passed ? "You have demonstrated the required mastery for this checkpoint." : "Review the marked answers below and retry the assessment after revisiting the related lesson.")</div>
+                    @if (Model.TimeExpired) { <div class="mt-2 small"><i class="bi bi-clock-history me-1"></i>The assessment time limit was reached. Your submitted answers were scored.</div> }
+                    <div class="mt-2 small">@(passed ? "You have demonstrated the required mastery for this checkpoint." : "Review the explanations below and retry after revisiting the related lesson.")</div>
+                </div>
+            } else {
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <span class="small text-muted-custom">Attempt @Model.AttemptNumber@(Model.AttemptLimit.HasValue ? $" of {Model.AttemptLimit.Value}" : "")</span>
+                    @if (Model.TimeLimitMinutes.HasValue) { <span id="quiz-timer" class="badge text-bg-light border"><i class="bi bi-stopwatch me-1"></i><span id="quiz-timer-value">--:--</span></span> }
                 </div>
             }
 
-            <form asp-action="Submit" method="post">
+            <form asp-action="Submit" method="post" id="quiz-form">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="QuizId" value="@Model.QuizId" />
-
-                @* Preserve the server-selected question set across POST. This prevents
-                   an empty SelectedQuestionIds collection when model binding occurs. *@
                 @foreach (var questionId in Model.SelectedQuestionIds.Distinct())
                 {
                     <input type="hidden" name="SelectedQuestionIds" value="@questionId" />
@@ -40,7 +52,7 @@
                     var question = Model.Questions[i];
                     <article class="question-card p-4 p-lg-5 mb-4">
                         <div class="d-flex justify-content-between gap-3 mb-3">
-                            <span class="eyebrow">Question @(i + 1)</span>
+                            <div class="d-flex align-items-center gap-2"><span class="eyebrow">Question @(i + 1)</span><span class="badge text-bg-light border">@question.Difficulty</span></div>
                             <span class="small text-muted-custom">@(i + 1) / @Model.Questions.Count</span>
                         </div>
                         <h2 class="h5 fw-bold mb-4">@question.QuestionText</h2>
@@ -51,7 +63,7 @@
                                     ? (option.IsCorrect ? "border-success bg-success-subtle" : (selected ? "border-danger bg-danger-subtle" : ""))
                                     : "";
                                 <label class="answer-option d-flex align-items-start gap-3 @reviewClass">
-                                    <input class="form-check-input mt-1" type="radio" name="Answers[@question.QuestionId]" value="@option.OptionId" @(selected ? "checked" : "") />
+                                    <input class="form-check-input mt-1" type="radio" name="Answers[@question.QuestionId]" value="@option.OptionId" @(selected ? "checked" : "") @(Model.Submitted ? "disabled" : "") />
                                     <span class="flex-grow-1">
                                         @option.OptionText
                                         @if (Model.Submitted && option.IsCorrect) { <span class="badge text-bg-success ms-2">Correct answer</span> }
@@ -60,13 +72,21 @@
                                 </label>
                             }
                         </div>
+                        @if (Model.Submitted && !string.IsNullOrWhiteSpace(question.Explanation)) {
+                            <div class="mt-4 p-3 rounded-3 bg-light border-start border-4 border-primary">
+                                <div class="small fw-semibold text-primary mb-1"><i class="bi bi-lightbulb me-1"></i>Why this is correct</div>
+                                <div class="small">@question.Explanation</div>
+                            </div>
+                        }
                     </article>
                 }
 
                 <div class="d-flex flex-wrap justify-content-between gap-2">
                     <a asp-controller="Course" asp-action="Learn" asp-route-id="@Model.CourseId" class="btn btn-soft btn-lg">Save & return</a>
                     @if (Model.Submitted) {
-                        <a asp-action="Take" asp-route-id="@Model.QuizId" class="btn btn-primary btn-lg px-4"><i class="bi bi-arrow-repeat me-1"></i> Retry assessment</a>
+                        @if (!Model.AttemptLimit.HasValue || Model.AttemptNumber < Model.AttemptLimit.Value) {
+                            <a asp-action="Take" asp-route-id="@Model.QuizId" class="btn btn-primary btn-lg px-4"><i class="bi bi-arrow-repeat me-1"></i> Retry assessment</a>
+                        }
                     } else {
                         <button type="submit" class="btn btn-primary btn-lg px-4"><i class="bi bi-check2-circle me-1"></i> Submit assessment</button>
                     }
@@ -75,3 +95,29 @@
         </div>
     </div>
 </div>
+
+@if (!Model.Submitted && Model.TimeLimitMinutes.HasValue)
+{
+<script>
+(() => {
+    const totalSeconds = @((Model.TimeLimitMinutes.Value) * 60);
+    const timer = document.getElementById('quiz-timer-value');
+    const form = document.getElementById('quiz-form');
+    let remaining = totalSeconds;
+    const render = () => {
+        const minutes = Math.floor(remaining / 60).toString().padStart(2, '0');
+        const seconds = (remaining % 60).toString().padStart(2, '0');
+        if (timer) timer.textContent = `${minutes}:${seconds}`;
+    };
+    render();
+    const interval = window.setInterval(() => {
+        remaining -= 1;
+        render();
+        if (remaining <= 0) {
+            window.clearInterval(interval);
+            if (form) form.submit();
+        }
+    }, 1000);
+})();
+</script>
+}
