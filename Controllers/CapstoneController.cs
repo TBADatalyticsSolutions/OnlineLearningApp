@@ -34,32 +34,25 @@ public class CapstoneController : Controller
         var course = await _context.Courses.FirstOrDefaultAsync(c => c.Id == model.CourseId);
         if (course is null) return NotFound();
         if (!await _context.StudentCourses.AnyAsync(sc => sc.StudentId == studentId && sc.CourseId == model.CourseId)) return Forbid();
-        if (string.IsNullOrWhiteSpace(model.ProjectTitle) || string.IsNullOrWhiteSpace(model.SubmissionUrl))
+        if (string.IsNullOrWhiteSpace(model.ProjectTitle) || !Uri.TryCreate(model.SubmissionUrl, UriKind.Absolute, out _))
         {
-            ModelState.AddModelError(string.Empty, "Project title and a submission URL are required.");
+            ModelState.AddModelError(string.Empty, "Project title and a valid submission URL are required.");
             ViewBag.Course = course;
             return View(model);
         }
         var existing = await _context.CapstoneSubmissions.FirstOrDefaultAsync(s => s.StudentId == studentId && s.CourseId == model.CourseId);
         if (existing is null)
         {
-            model.StudentId = studentId!;
-            model.Status = CapstoneSubmissionStatus.Submitted;
-            model.SubmittedAt = DateTime.UtcNow;
+            model.StudentId = studentId!; model.Status = CapstoneSubmissionStatus.Submitted; model.SubmittedAt = DateTime.UtcNow;
             _context.CapstoneSubmissions.Add(model);
         }
         else
         {
-            existing.ProjectTitle = model.ProjectTitle;
-            existing.SubmissionUrl = model.SubmissionUrl;
-            existing.Summary = model.Summary;
-            existing.Status = CapstoneSubmissionStatus.Submitted;
-            existing.SubmittedAt = DateTime.UtcNow;
-            existing.ReviewerFeedback = null;
-            existing.ReviewedAt = null;
+            existing.ProjectTitle = model.ProjectTitle; existing.SubmissionUrl = model.SubmissionUrl; existing.Summary = model.Summary;
+            existing.Status = CapstoneSubmissionStatus.Submitted; existing.SubmittedAt = DateTime.UtcNow; existing.ReviewerFeedback = null; existing.ReviewedAt = null;
         }
         await _context.SaveChangesAsync();
-        TempData["Success"] = "Capstone submitted. Your instructor will review it before certification is unlocked.";
+        TempData["Success"] = "Capstone submitted for review.";
         return RedirectToAction("Learn", "Course", new { id = model.CourseId });
     }
 
@@ -67,21 +60,31 @@ public class CapstoneController : Controller
     [HttpGet]
     public async Task<IActionResult> Review()
     {
-        var submissions = await _context.CapstoneSubmissions.AsNoTracking().Include(s => s.Student).Include(s => s.Course).OrderByDescending(s => s.SubmittedAt).ToListAsync();
-        return View(submissions);
+        var reviewerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var query = _context.CapstoneSubmissions.AsNoTracking().Include(s => s.Student).Include(s => s.Course).AsQueryable();
+        if (User.IsInRole(UserRoles.Instructor)) query = query.Where(s => s.Course.InstructorId == reviewerId);
+        return View(await query.OrderByDescending(s => s.SubmittedAt).ToListAsync());
     }
 
     [Authorize(Roles = UserRoles.Admin + "," + UserRoles.Instructor)]
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> Review(int id, CapstoneSubmissionStatus status, string? reviewerFeedback)
+    public async Task<IActionResult> Review(int id, CapstoneSubmission model)
     {
-        var submission = await _context.CapstoneSubmissions.FindAsync(id);
+        var reviewerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var submission = await _context.CapstoneSubmissions.Include(s => s.Course).FirstOrDefaultAsync(s => s.Id == id);
         if (submission is null) return NotFound();
-        submission.Status = status;
-        submission.ReviewerFeedback = reviewerFeedback;
+        if (User.IsInRole(UserRoles.Instructor) && submission.Course.InstructorId != reviewerId) return Forbid();
+        submission.TechnicalScore = model.TechnicalScore;
+        submission.ProblemSolvingScore = model.ProblemSolvingScore;
+        submission.CommunicationScore = model.CommunicationScore;
+        submission.ProfessionalismScore = model.ProfessionalismScore;
+        submission.CalculateOverallScore();
+        submission.Status = model.Status;
+        submission.ReviewerFeedback = model.ReviewerFeedback;
+        submission.ReviewerId = reviewerId;
         submission.ReviewedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
-        TempData["Success"] = "Capstone review saved.";
+        TempData["Success"] = "Capstone rubric and review saved.";
         return RedirectToAction(nameof(Review));
     }
 }
