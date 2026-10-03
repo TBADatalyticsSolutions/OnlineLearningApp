@@ -7,7 +7,6 @@ namespace OnlineLearningApp.Data;
 public class OnlineLearningAppDbContext : IdentityDbContext<Account>
 {
     public OnlineLearningAppDbContext(DbContextOptions<OnlineLearningAppDbContext> options) : base(options) { }
-
     public DbSet<Account> Accounts { get; set; }
     public DbSet<Course> Courses { get; set; }
     public DbSet<Course_Module> Courses_Modules { get; set; }
@@ -28,7 +27,6 @@ public class OnlineLearningAppDbContext : IdentityDbContext<Account>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
         modelBuilder.Entity<Account>().HasMany(a => a.Courses).WithOne(c => c.Instructor).HasForeignKey(c => c.InstructorId);
         modelBuilder.Entity<Account>().HasMany(a => a.Orders).WithOne(o => o.Account).HasForeignKey(o => o.AccountId);
         modelBuilder.Entity<Course>().Property(c => c.RequireAllQuizzesPassed).HasDefaultValue(true);
@@ -65,5 +63,11 @@ public class OnlineLearningAppDbContext : IdentityDbContext<Account>
         modelBuilder.Entity<CapstoneSubmission>().HasIndex(s => new { s.StudentId, s.CourseId }).IsUnique();
         modelBuilder.Entity<CapstoneSubmission>().HasOne(s => s.Student).WithMany().HasForeignKey(s => s.StudentId).OnDelete(DeleteBehavior.Cascade);
         modelBuilder.Entity<CapstoneSubmission>().HasOne(s => s.Course).WithMany().HasForeignKey(s => s.CourseId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<CapstoneSubmission>().HasOne(s => s.Reviewer).WithMany().HasForeignKey(s => s.ReviewerId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
+        modelBuilder.Entity<CapstoneSubmission>().Property(s => s.TechnicalScore).HasPrecision(5, 2);
+        modelBuilder.Entity<CapstoneSubmission>().Property(s => s.ProblemSolvingScore).HasPrecision(5, 2);
+        modelBuilder.Entity<CapstoneSubmission>().Property(s => s.CommunicationScore).HasPrecision(5, 2);
+        modelBuilder.Entity<CapstoneSubmission>().Property(s => s.ProfessionalismScore).HasPrecision(5, 2);
+        modelBuilder.Entity<CapstoneSubmission>().Property(s => s.OverallScore).HasPrecision(5, 2);
     }
 }
