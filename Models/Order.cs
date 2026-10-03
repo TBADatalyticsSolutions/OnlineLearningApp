@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using OnlineLearningApp.Models;
 
 namespace OnlineLearningApp;
@@ -14,7 +14,10 @@ public class Order
     public DateTime OrderDate { get; set; }
     [Required]
     public decimal TotalAmount { get; set; }
+    public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Pending;
+    [MaxLength(120)]
+    public string? PaymentReference { get; set; }
+    public DateTime? PaidAt { get; set; }
     public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
-    // Navigation property
     public virtual Account Account { get; set; } = default!;
 }
