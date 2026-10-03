@@ -17,10 +17,14 @@ public class Course : IEntityBase
     public decimal Price { get; set; }
     public string ImageURL { get; set; } = default!;
     public CourseStatus Status { get; set; }
-
-    // Completion policy: every module must be completed and every checkpoint
-    // quiz must be passed at least once before the course is completed.
     public bool RequireAllQuizzesPassed { get; set; } = true;
+
+    public bool RequirePaymentForAssessment { get; set; } = true;
+    public bool RequireCapstone { get; set; } = true;
+    [MaxLength(180)]
+    public string CapstoneTitle { get; set; } = "Applied Capstone Project";
+    public string CapstoneDescription { get; set; } = "Complete a practical project demonstrating the skills developed throughout this course.";
+    public string CapstoneRequirements { get; set; } = "Submit a clear problem statement, methodology, working artefact or analysis, results, and a short reflection.";
 
     public virtual ICollection<Module> Modules { get; set; } = new List<Module>();
     public virtual ICollection<StudentCourse> StudentCourses { get; set; } = new List<StudentCourse>();
