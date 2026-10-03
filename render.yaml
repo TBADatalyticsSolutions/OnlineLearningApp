@@ -23,6 +23,8 @@ services:
           name: tba-online-learning-cache
           type: keyvalue
           property: connectionString
+      - key: Paystack__SecretKey
+        sync: false
       - key: SeedAccounts__AdminPassword
         sync: false
       - key: SeedAccounts__InstructorPassword
