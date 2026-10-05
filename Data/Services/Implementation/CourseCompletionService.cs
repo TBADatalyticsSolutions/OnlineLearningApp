@@ -7,7 +7,8 @@ namespace OnlineLearningApp.Data.Services.Implementation;
 public sealed class CourseCompletionService : ICourseCompletionService
 {
     private readonly OnlineLearningAppDbContext _context;
-    public CourseCompletionService(OnlineLearningAppDbContext context) => _context = context;
+    private readonly TimeProvider _clock;
+    public CourseCompletionService(OnlineLearningAppDbContext context, TimeProvider clock){_context=context;_clock=clock;}
 
     public async Task<CourseCompletionResult> EvaluateAsync(string studentId, int courseId, bool issueCertificate = true)
     {
@@ -29,11 +30,12 @@ public sealed class CourseCompletionService : ICourseCompletionService
         Certificate? certificate = null;
         if (isCompleted)
         {
-            enrollment.CompletedAt ??= DateTime.UtcNow;
+            var now = _clock.GetUtcNow().UtcDateTime;
+            enrollment.CompletedAt ??= now;
             certificate = await _context.Certificates.FirstOrDefaultAsync(c => c.StudentId == studentId && c.CourseId == courseId);
             if (certificate is null && issueCertificate)
             {
-                certificate = new Certificate { CertificateNumber = $"TBA-{DateTime.UtcNow:yyyy}-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}", StudentId = studentId, CourseId = courseId, IssuedAt = DateTime.UtcNow };
+                certificate = new Certificate { CertificateNumber = $"TBA-{now:yyyy}-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}", StudentId = studentId, CourseId = courseId, IssuedAt = now };
                 _context.Certificates.Add(certificate);
             }
             await _context.SaveChangesAsync();
