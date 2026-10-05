@@ -33,7 +33,8 @@ public class CapstoneSubmission
     [Range(0, 100)] public decimal CommunicationScore { get; set; }
     [Range(0, 100)] public decimal ProfessionalismScore { get; set; }
     [Range(0, 100)] public decimal OverallScore { get; set; }
-    public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
+    /// <summary>Stored as UTC. Assigned by the application using TimeProvider.</summary>
+    public DateTime SubmittedAt { get; set; }
     public DateTime? ReviewedAt { get; set; }
 
     public void CalculateOverallScore()
