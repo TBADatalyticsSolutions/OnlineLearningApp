@@ -39,7 +39,8 @@ public class CourseMaterial
     public long? FileSize { get; set; }
 
     [Required]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    /// <summary>Stored as UTC. Assigned by the application using TimeProvider.</summary>
+    public DateTime CreatedAt { get; set; }
 
     public string? UploadedById { get; set; }
 
