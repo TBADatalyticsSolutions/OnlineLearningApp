@@ -31,7 +31,8 @@ public class Quiz
     public bool ShuffleQuestions { get; set; } = true;
     public bool ShuffleOptions { get; set; } = true;
 
-    public DateTime DateCreated { get; set; } = DateTime.UtcNow;
+    /// <summary>Stored as UTC. Creation time is assigned by the application service using TimeProvider.</summary>
+    public DateTime DateCreated { get; set; }
 
     public int ModuleId { get; set; }
 
