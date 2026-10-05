@@ -6,10 +6,12 @@ namespace OnlineLearningApp;
 public class OrderService : IOrderService
 {
     private readonly OnlineLearningAppDbContext _context;
+    private readonly TimeProvider _clock;
 
-    public OrderService(OnlineLearningAppDbContext context)
+    public OrderService(OnlineLearningAppDbContext context, TimeProvider clock)
     {
         _context = context;
+        _clock = clock;
     }
 
     public async Task<List<Order>> GetOrdersByUserIdAndRoleAsync(string userId, string userRole)
@@ -47,7 +49,7 @@ public class OrderService : IOrderService
         {
             AccountId = userId,
             Email = userEmailAddress,
-            OrderDate = DateTime.UtcNow,
+            OrderDate = _clock.GetUtcNow().UtcDateTime,
             TotalAmount = totalAmount
         };
 
