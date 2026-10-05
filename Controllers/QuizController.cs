@@ -13,8 +13,14 @@ public class QuizController : Controller
     private const string QuestionSetPrefix = "QuizQuestionSet:";
     private const string StartTimePrefix = "QuizStartTime:";
     private readonly OnlineLearningAppDbContext _context;
+    private readonly TimeProvider _clock;
 
-    public QuizController(OnlineLearningAppDbContext context) => _context = context;
+    public QuizController(OnlineLearningAppDbContext context, TimeProvider clock)
+    {
+        _context = context;
+        _clock = clock;
+    }
+
     private static string QuestionSetKey(string studentId, int quizId) => $"{QuestionSetPrefix}{studentId}:{quizId}";
     private static string StartTimeKey(string studentId, int quizId) => $"{StartTimePrefix}{studentId}:{quizId}";
 
@@ -62,7 +68,7 @@ public class QuizController : Controller
 
         var viewModel = BuildViewModel(quiz);
         HttpContext.Session.SetString(QuestionSetKey(studentId, id), string.Join(",", viewModel.SelectedQuestionIds));
-        HttpContext.Session.SetString(StartTimeKey(studentId, id), DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+        HttpContext.Session.SetString(StartTimeKey(studentId, id), _clock.GetUtcNow().ToUnixTimeSeconds().ToString());
         await PopulateLatestAttemptAsync(viewModel, studentId, id);
         viewModel.AttemptNumber = previousAttempts + 1;
         return View(viewModel);
@@ -102,7 +108,7 @@ public class QuizController : Controller
         var percentage = totalQuestions == 0 ? 0m : Math.Round(score * 100m / totalQuestions, 2);
         var timeExpired = HasTimeExpired(studentId, quiz);
         var passed = !timeExpired && totalQuestions > 0 && percentage >= quiz.PassMark;
-        var attemptedAt = DateTime.UtcNow;
+        var attemptedAt = _clock.GetUtcNow().UtcDateTime;
 
         _context.QuizAttempts.Add(new QuizAttempt { StudentId = studentId, QuizId = quiz.QuizId, Score = score, TotalQuestions = totalQuestions, Percentage = percentage, Passed = passed, AttemptedAt = attemptedAt });
         await _context.SaveChangesAsync();
@@ -127,7 +133,7 @@ public class QuizController : Controller
         if (!quiz.TimeLimitMinutes.HasValue) return false;
         var raw = HttpContext.Session.GetString(StartTimeKey(studentId, quiz.QuizId));
         if (!long.TryParse(raw, out var start)) return true;
-        return DateTimeOffset.UtcNow.ToUnixTimeSeconds() - start > TimeSpan.FromMinutes(quiz.TimeLimitMinutes.Value).TotalSeconds;
+        return _clock.GetUtcNow().ToUnixTimeSeconds() - start > TimeSpan.FromMinutes(quiz.TimeLimitMinutes.Value).TotalSeconds;
     }
     private void ClearAssessmentSession(string studentId, int quizId) { HttpContext.Session.Remove(QuestionSetKey(studentId, quizId)); HttpContext.Session.Remove(StartTimeKey(studentId, quizId)); }
     private static HashSet<int> ParseIds(string? value) => (value ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries).Select(x => int.TryParse(x, out var id) ? id : 0).Where(id => id > 0).ToHashSet();
