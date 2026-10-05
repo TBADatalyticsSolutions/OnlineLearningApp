@@ -11,7 +11,8 @@ namespace OnlineLearningApp.Controllers;
 public class CapstoneController : Controller
 {
     private readonly OnlineLearningAppDbContext _context;
-    public CapstoneController(OnlineLearningAppDbContext context) => _context = context;
+    private readonly TimeProvider _clock;
+    public CapstoneController(OnlineLearningAppDbContext context, TimeProvider clock){_context=context;_clock=clock;}
 
     [Authorize(Roles = UserRoles.Student)]
     [HttpGet]
@@ -41,15 +42,16 @@ public class CapstoneController : Controller
             return View(model);
         }
         var existing = await _context.CapstoneSubmissions.FirstOrDefaultAsync(s => s.StudentId == studentId && s.CourseId == model.CourseId);
+        var now = _clock.GetUtcNow().UtcDateTime;
         if (existing is null)
         {
-            model.StudentId = studentId!; model.Status = CapstoneSubmissionStatus.Submitted; model.SubmittedAt = DateTime.UtcNow;
+            model.StudentId = studentId!; model.Status = CapstoneSubmissionStatus.Submitted; model.SubmittedAt = now;
             _context.CapstoneSubmissions.Add(model);
         }
         else
         {
             existing.ProjectTitle = model.ProjectTitle; existing.SubmissionUrl = model.SubmissionUrl; existing.Summary = model.Summary;
-            existing.Status = CapstoneSubmissionStatus.Submitted; existing.SubmittedAt = DateTime.UtcNow; existing.ReviewerFeedback = null; existing.ReviewedAt = null;
+            existing.Status = CapstoneSubmissionStatus.Submitted; existing.SubmittedAt = now; existing.ReviewerFeedback = null; existing.ReviewedAt = null;
         }
         await _context.SaveChangesAsync();
         TempData["Success"] = "Capstone submitted for review.";
@@ -82,7 +84,7 @@ public class CapstoneController : Controller
         submission.Status = model.Status;
         submission.ReviewerFeedback = model.ReviewerFeedback;
         submission.ReviewerId = reviewerId;
-        submission.ReviewedAt = DateTime.UtcNow;
+        submission.ReviewedAt = _clock.GetUtcNow().UtcDateTime;
         await _context.SaveChangesAsync();
         TempData["Success"] = "Capstone rubric and review saved.";
         return RedirectToAction(nameof(Review));
