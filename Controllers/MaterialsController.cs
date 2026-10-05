@@ -20,11 +20,13 @@ public class MaterialsController : Controller
 
     private readonly OnlineLearningAppDbContext _context;
     private readonly IWebHostEnvironment _environment;
+    private readonly TimeProvider _clock;
 
-    public MaterialsController(OnlineLearningAppDbContext context, IWebHostEnvironment environment)
+    public MaterialsController(OnlineLearningAppDbContext context, IWebHostEnvironment environment, TimeProvider clock)
     {
         _context = context;
         _environment = environment;
+        _clock = clock;
     }
 
     [Authorize(Roles = UserRoles.Admin)]
@@ -134,7 +136,7 @@ public class MaterialsController : Controller
             ResourceUrl = string.IsNullOrWhiteSpace(model.ResourceUrl) ? null : model.ResourceUrl.Trim(),
             MaterialType = model.File is not null ? "File" : "Link",
             UploadedById = uploaderId,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = _clock.GetUtcNow().UtcDateTime
         };
 
         if (model.File is not null)
